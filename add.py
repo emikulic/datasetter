@@ -72,11 +72,23 @@ def md5(fn):
         return hashlib.md5(f.read()).hexdigest()
 
 
+def center_crop(obj):
+    """
+    Populate x,y,w,h for a center crop.
+    """
+    w = obj["orig_w"]
+    h = obj["orig_h"]
+    sz = min(w, h)
+    obj["w"] = obj["h"] = sz
+    obj["x"] = (w - sz) // 2
+    obj["y"] = (h - sz) // 2
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--caption", default=None, help="Optional default caption.")
     p.add_argument("dsfile", help="JSON dataset file to add to.")
-    p.add_argument("inputs", nargs="*", help="Dirs and files to add.")
+    p.add_argument("inputs", nargs="+", help="Dirs and files to add.")
     args = p.parse_args()
 
     ds = Dataset(args.dsfile)
@@ -111,14 +123,8 @@ def main():
         }
         if args.caption:
             obj["caption"] = caption
+        center_crop(obj)
         ds.add(obj)
-
-        # print(img)
-        # print(dir(img))
-
-    # print(args.inputs)
-    # print(ds._data)
-    # print(ds.next_n())
 
 
 if __name__ == "__main__":
