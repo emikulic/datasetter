@@ -5,12 +5,15 @@ Add images to a dataset.
 from PIL import Image, ImageFile
 import argparse
 import json
+import os
 
 
 class Dataset:
     def __init__(self, fn):
-        self.data = {}  # Map from N to metadata object.
-        self._load(fn)
+        self._data = {}  # Map from N to metadata object.
+        self._fn = fn
+        if os.path.exists(fn):
+            self._load(fn)
 
     def _load(self, fn):
         """
@@ -21,8 +24,13 @@ class Dataset:
                 obj = json.loads(line)
                 assert "n" in obj, obj
                 n = int(obj["n"])
-                self.data[n] = obj
+                self._data[n] = obj
 
+    def next_n(self):
+        """
+        Returns the next N.
+        """
+        return max([-1] + list(self._data.keys())) + 1
 
 def main():
     p = argparse.ArgumentParser()
@@ -32,3 +40,8 @@ def main():
     args = p.parse_args()
 
     ds = Dataset(args.dsfile)
+    print(ds._data)
+    print(ds.next_n())
+
+if __name__ == '__main__':
+    main()
