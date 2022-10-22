@@ -32,6 +32,18 @@ class Dataset:
         """
         return max([-1] + list(self._data.keys())) + 1
 
+
+def walk_dir(path):
+    """
+    Recursively walk the given path and return a list of filenames.
+    """
+    out = []
+    for dirpath, dirnames, filenames in os.walk(path):
+        for fn in filenames:
+            out.append(f"{dirpath}/{fn}")
+    return out
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--caption", default=None, help="Optional default caption.")
@@ -40,8 +52,20 @@ def main():
     args = p.parse_args()
 
     ds = Dataset(args.dsfile)
-    print(ds._data)
-    print(ds.next_n())
 
-if __name__ == '__main__':
+    fns = []
+    for i in args.inputs:
+        if os.path.isdir(i):
+            fns += walk_dir(i)
+        else:
+            assert os.path.isfile(i), i
+            fns.append(i)
+
+    print(fns)
+    # print(args.inputs)
+    # print(ds._data)
+    # print(ds.next_n())
+
+
+if __name__ == "__main__":
     main()
