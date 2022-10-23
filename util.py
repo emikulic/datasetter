@@ -79,3 +79,16 @@ def load_image(fn):
     img = Image.open(fn)
     img = ImageOps.exif_transpose(img)
     return rgbify(img)
+
+
+def load_and_crop(o, sz):
+    """
+    Load the image from the given metadata (o), crop, and resize to sz.
+    """
+    img = load_image(o["fn"])
+    assert img.width == o["orig_w"]  # TODO: warn instead
+    assert img.height == o["orig_h"]
+    x, y, w, h = o["x"], o["y"], o["w"], o["h"]
+    img = img.crop((x, y, x + w, y + h))
+    img = img.resize((sz, sz), Image.Resampling.BICUBIC)
+    return img

@@ -28,14 +28,7 @@ def main():
     # Process all inputs.
     for o in objs:
         assert os.path.getsize(o["fn"]) == o["fsz"]
-        img = util.load_image(o["fn"])
-        assert img.width == o["orig_w"]
-        assert img.height == o["orig_h"]
-        # TODO: factor out crop and resize code
-        x, y, w, h = o["x"], o["y"], o["w"], o["h"]
-        img = img.crop((x, y, x + w, y + h))
-        sz = args.size
-        img = img.resize((sz, sz), Image.Resampling.BICUBIC)
+        img = util.load_and_crop(o, args.size)
         ofn = f"{o['md5']}-{o['n']}"
         img.save(f"{args.outdir}/img/{ofn}.jpg", quality=95)
 

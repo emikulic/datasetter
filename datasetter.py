@@ -56,10 +56,7 @@ async def thumbnail(request):
     n = int(request.match_info.get("n", ""))
     sz = int(request.match_info.get("sz", ""))
     o = request.config_dict["ds"]._data[n]
-    img = util.load_image(o["fn"])
-    x, y, w, h = o["x"], o["y"], o["w"], o["h"]
-    img = img.crop((x, y, x + w, y + h))
-    img = img.resize((sz, sz), Image.Resampling.BICUBIC)
+    img = util.load_and_crop(o, sz)
     s = BytesIO()
     img.save(s, format="jpeg", quality=95)
     # TODO: caching
