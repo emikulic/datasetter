@@ -5,28 +5,11 @@ Generate a dataset directory.
 from PIL import Image, ImageFile
 from util import Dataset
 import argparse
-import numpy as np
 import os
+import util
 
 # Don't throw exception when a file only partially loads.
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-
-
-def rgbify(i):
-    """
-    Convert grayscale to RGB by duplicating into 3 channels.
-    This is a no-op on images that already have 3 channels.
-    If the image has an alpha channel, it's stripped.
-    """
-    i = np.atleast_3d(i)
-    h, w, c = i.shape
-    if c == 3:
-        return i
-    if c == 4:
-        return i[:, :, :3]
-    out = np.zeros((h, w, 3), dtype=i.dtype)
-    out[:, :, :] = i[:, :]
-    return out
 
 
 def main():
@@ -51,11 +34,11 @@ def main():
         img = Image.open(o["fn"])
         assert img.width == o["orig_w"]
         assert img.height == o["orig_h"]
+        img = util.rgbify(img)
         x, y, w, h = o["x"], o["y"], o["w"], o["h"]
         img = img.crop((x, y, x + w, y + h))
         sz = args.size
         img = img.resize((sz, sz), Image.Resampling.BICUBIC)
-        img = Image.fromarray(rgbify(img))
         ofn = f"{o['md5']}-{o['n']}"
         img.save(f"{args.outdir}/img/{ofn}.jpg", quality=95)
 
