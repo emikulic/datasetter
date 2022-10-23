@@ -11,7 +11,7 @@ Then run a webserver to be able to edit metadata:
 
 Finally, a CLI to generate a dataset directory:
 
-    ./prep.py --out=dataset/ ds1.json ds2.json ds3.json
+    ./prep.py dataset ds1.json ds2.json ds3.json
 
 Need to make this work incrementally at some point.
 
