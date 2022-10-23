@@ -6,8 +6,8 @@ from PIL import Image, ImageFile
 import argparse
 import os
 from util import Dataset
+import util
 from aiohttp import web
-from prep import rgbify  # TODO: move to util.py
 
 # import urllib.parse
 import aiohttp
@@ -61,7 +61,7 @@ async def thumbnail(request):
     # TODO: factor out loading into util.py:
     img = Image.open(o["fn"])
     # TODO: exif rotation
-    img = Image.fromarray(rgbify(img))
+    img = util.rgbify(img)
     x, y, w, h = o["x"], o["y"], o["w"], o["h"]
     img = img.crop((x, y, x + w, y + h))
     img = img.resize((sz, sz), Image.Resampling.BICUBIC)
