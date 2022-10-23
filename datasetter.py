@@ -27,11 +27,25 @@ async def index(request):
     )
 
 
-@routes.get("/title")
+@routes.get("/jquery.js")
+async def index(request):
+    with open("jquery.js", "r") as f:
+        s = f.read()
+    return web.Response(text=s, content_type="text/javascript")
+
+
+@routes.get("/title.txt")
 async def title(request):
     fn = request.config_dict["args"].dsfile
     fn = os.path.basename(fn)
     return web.Response(text=fn)
+
+
+@routes.get("/data.json")
+async def title(request):
+    return web.json_response(
+        request.config_dict["ds"]._data, headers={"Pragma": "no-cache"}
+    )
 
 
 def main():

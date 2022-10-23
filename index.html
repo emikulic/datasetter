@@ -5,19 +5,26 @@
 <style type="text/css">
 
 body { background:#234; color:#aaa; }
+img.thumbnail { background:#f00; }
 
 </style>
 </head>
 <body>
-Hello.
+<div id="content"></div>
 </body>
+<script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript">
 
 'use strict;'
 
 // Put dataset name into page title.
-fetch('/title').then((response) => response.text().then(
-	(text) => { document.title = `${text} - datasetter`; }));
+fetch('title.txt').then((response) => response.text().then((text) => document.title = `${text} - datasetter`));
+
+fetch('data.json').then((response) => response.json().then((json) => {
+	for (const [n, obj] of Object.entries(json)) {
+		$('<img />', { class: 'thumbnail', src: `thumbnail/${n}` }).appendTo($('#content'));
+	}
+}));
 
 </script>
 </html>
