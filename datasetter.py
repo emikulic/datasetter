@@ -2,20 +2,18 @@
 """
 Web-based dataset editing.
 """
-from PIL import Image, ImageFile
+from PIL import Image
 import argparse
 import os
 from util import Dataset
 import util
 from aiohttp import web
-
-# import urllib.parse
 import aiohttp
 import logging
 from io import BytesIO
 
-# Don't throw exception when a file only partially loads.
-ImageFile.LOAD_TRUNCATED_IMAGES = True  # TODO: factor out loading into util.py
+# import urllib.parse
+
 
 logging.basicConfig(level=logging.INFO)
 
@@ -58,10 +56,7 @@ async def thumbnail(request):
     n = int(request.match_info.get("n", ""))
     sz = int(request.match_info.get("sz", ""))
     o = request.config_dict["ds"]._data[n]
-    # TODO: factor out loading into util.py:
-    img = Image.open(o["fn"])
-    # TODO: exif rotation
-    img = util.rgbify(img)
+    img = util.load_image(o["fn"])
     x, y, w, h = o["x"], o["y"], o["w"], o["h"]
     img = img.crop((x, y, x + w, y + h))
     img = img.resize((sz, sz), Image.Resampling.BICUBIC)

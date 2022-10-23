@@ -2,11 +2,11 @@
 """
 Add images to a dataset.
 """
-from PIL import Image, ImageFile
 import argparse
 import os
 import hashlib
 from util import Dataset
+import util
 
 
 def walk_dir(path):
@@ -66,14 +66,13 @@ def main():
             print(f"seen {fn}")
             continue
         print(f"processing {fn}")
-        img = Image.open(fn)
+        img = util.load_image(fn)
         obj = {
             "fn": fn,
             "md5": md5(fn),
             "fsz": os.path.getsize(fn),
             "orig_w": img.width,
             "orig_h": img.height,
-            # TODO: xywh
             "rot": 0,
             "needs_rebuild": 1,
         }

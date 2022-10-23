@@ -2,10 +2,13 @@
 """
 Utilities.
 """
-from PIL import Image
+from PIL import Image, ImageFile, ImageOps
 import json
 import os
 import numpy as np
+
+# Don't throw exception when a file only partially loads.
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class Dataset:
@@ -67,3 +70,12 @@ def rgbify(i):
     out = np.zeros((h, w, 3), dtype=i.dtype)
     out[:, :, :] = i[:, :]
     return Image.fromarray(out)
+
+
+def load_image(fn):
+    """
+    Load an image, apply EXIF rotation, convert to RGB.
+    """
+    img = Image.open(fn)
+    img = ImageOps.exif_transpose(img)
+    return rgbify(img)
