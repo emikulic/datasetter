@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>datasetter</title>
+<style type="text/css">
+
+body { background:#234; color:#aaa; }
+
+</style>
+</head>
+<body>
+Hello.
+</body>
+<script type="text/javascript">
+
+'use strict;'
+
+// Put dataset name into page title.
+fetch('/title').then((response) => response.text().then(
+	(text) => { document.title = `${text} - datasetter`; }));
+
+</script>
+</html>
