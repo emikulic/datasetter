@@ -15,5 +15,9 @@ Hello.
 
 'use strict;'
 
+// Put dataset name into page title.
+fetch('/title').then((response) => response.text().then(
+	(text) => { document.title = `${text} - datasetter`; }));
+
 </script>
 </html>

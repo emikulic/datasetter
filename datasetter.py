@@ -4,9 +4,7 @@ Web-based dataset editing.
 """
 # from PIL import Image, ImageFile
 import argparse
-
-# import os
-# import hashlib
+import os
 from util import Dataset
 from aiohttp import web
 
@@ -17,37 +15,37 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 
-class Server:
-    routes = web.RouteTableDef()
+routes = web.RouteTableDef()
 
-    def __init__(self, args):
-        self._port = args.port
-        self._bind = args.bind
-        self._ds = Dataset(args.dsfile)
 
-    @routes.get("/")
-    async def hello(request):
-        with open("index.html", "r") as f:
-            s = f.read()
-        return web.Response(
-            text=s, content_type="text/html", headers={"Pragma": "no-cache"}
-        )
+@routes.get("/")
+async def index(request):
+    with open("index.html", "r") as f:
+        s = f.read()
+    return web.Response(
+        text=s, content_type="text/html", headers={"Pragma": "no-cache"}
+    )
 
-    def run(self):
-        app = web.Application()
-        app.add_routes(self.routes)
-        web.run_app(app, port=self._port, host=self._bind)
+
+@routes.get("/title")
+async def title(request):
+    fn = request.config_dict["args"].dsfile
+    fn = os.path.basename(fn)
+    return web.Response(text=fn)
 
 
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--port", type=int, default=8001)
-    p.add_argument("--bind", type=str, default="127.0.0.1")
+    p.add_argument("--host", type=str, default="127.0.0.1", help="Bind address.")
     p.add_argument("dsfile", help="JSON dataset file to operate on.")
     args = p.parse_args()
 
-    s = Server(args)
-    s.run()
+    app = web.Application()
+    app.add_routes(routes)
+    app["args"] = args
+    app["ds"] = Dataset(args.dsfile)
+    web.run_app(app, port=args.port, host=args.host)
 
 
 if __name__ == "__main__":
