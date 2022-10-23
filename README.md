@@ -34,3 +34,8 @@ JSON looks like: text file with one line per data item:
 
 If a record with the same 'n' repeats, last wins.
 This way, the dataset JSON can be updated by appending records.
+
+# tests
+To run tests, use
+
+    python -m unittest discover
