@@ -22,7 +22,7 @@ fetch('title.txt').then((response) => response.text().then((text) => document.ti
 
 fetch('data.json').then((response) => response.json().then((json) => {
 	for (const [n, obj] of Object.entries(json)) {
-		$('<img />', { class: 'thumbnail', src: `thumbnail/${n}` }).appendTo($('#content'));
+		$('<img />', { class: 'thumbnail', src: `thumbnail/32/${n}` }).appendTo($('#content'));
 	}
 }));
 
