@@ -2,14 +2,11 @@
 """
 Generate a dataset directory.
 """
-from PIL import Image, ImageFile
+from PIL import Image
 from util import Dataset
 import argparse
 import os
 import util
-
-# Don't throw exception when a file only partially loads.
-ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def main():
@@ -31,10 +28,10 @@ def main():
     # Process all inputs.
     for o in objs:
         assert os.path.getsize(o["fn"]) == o["fsz"]
-        img = Image.open(o["fn"])
+        img = util.load_image(o["fn"])
         assert img.width == o["orig_w"]
         assert img.height == o["orig_h"]
-        img = util.rgbify(img)
+        # TODO: factor out crop and resize code
         x, y, w, h = o["x"], o["y"], o["w"], o["h"]
         img = img.crop((x, y, x + w, y + h))
         sz = args.size
