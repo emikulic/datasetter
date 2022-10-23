@@ -6,12 +6,14 @@ from PIL import Image, ImageFile
 import argparse
 import json
 import os
+import hashlib
 
 
 class Dataset:
     def __init__(self, fn):
         self._data = {}  # Map from N to metadata object.
         self._fn = fn
+        self._fns = set()  # Set of original filenames.
         if os.path.exists(fn):
             self._load(fn)
 
@@ -20,17 +22,35 @@ class Dataset:
         Load dataset from the given filename.
         """
         with open(fn, "r") as f:
-            for line in fp.readlines():
-                obj = json.loads(line)
-                assert "n" in obj, obj
-                n = int(obj["n"])
-                self._data[n] = obj
+            for line in f.readlines():
+                self._memadd(json.loads(line))
 
     def next_n(self):
         """
         Returns the next N.
         """
         return max([-1] + list(self._data.keys())) + 1
+
+    def _memadd(self, obj):
+        """
+        Adds the specified object into the in-memory data, without updating the file
+        on disk.
+        """
+        n = obj["n"]
+        assert type(n) is int, n
+        self._data[n] = obj
+        self._fns.add(obj["fn"])
+
+    def seen_fn(self, fn):
+        return fn in self._fns
+
+    def add(self, obj):
+        if "n" not in obj:
+            obj["n"] = self.next_n()
+        self._memadd(obj)
+        with open(self._fn, "a") as f:
+            json.dump(obj, f)
+            f.write("\n")
 
 
 def walk_dir(path):
@@ -44,6 +64,14 @@ def walk_dir(path):
     return out
 
 
+def md5(fn):
+    """
+    Returns the hex md5sum of the given filename.
+    """
+    with open(fn, "rb") as f:
+        return hashlib.md5(f.read()).hexdigest()
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--caption", default=None, help="Optional default caption.")
@@ -53,6 +81,7 @@ def main():
 
     ds = Dataset(args.dsfile)
 
+    # Build list of inputs.
     fns = []
     for i in args.inputs:
         if os.path.isdir(i):
@@ -60,8 +89,33 @@ def main():
         else:
             assert os.path.isfile(i), i
             fns.append(i)
+    fns = [os.path.realpath(i) for i in fns]
+    fns.sort()
 
-    print(fns)
+    # Process.
+    for fn in fns:
+        if ds.seen_fn(fn):
+            print(f"seen {fn}")
+            continue
+        print(f"processing {fn}")
+        img = Image.open(fn)
+        obj = {
+            "fn": fn,
+            "md5": md5(fn),
+            "fsz": os.path.getsize(fn),
+            "orig_w": img.width,
+            "orig_h": img.height,
+            # TODO: xywh
+            "rot": 0,
+            "needs_rebuild": 1,
+        }
+        if args.caption:
+            obj["caption"] = caption
+        ds.add(obj)
+
+        # print(img)
+        # print(dir(img))
+
     # print(args.inputs)
     # print(ds._data)
     # print(ds.next_n())
