@@ -3,10 +3,9 @@
 <head>
 <title>datasetter</title>
 <style type="text/css">
-
-body { background:#234; color:#aaa; }
-img.thumbnail { background:#f00; }
-
+    body { background:#234; color:#aaa; }
+    img.thumbnail { background:#f00; }
+    textarea { width: 512px; height: 100px; }
 </style>
 </head>
 <body>
@@ -20,11 +19,30 @@ img.thumbnail { background:#f00; }
 // Put dataset name into page title.
 fetch('title.txt').then((response) => response.text().then((text) => document.title = `${text} - datasetter`));
 
-fetch('data.json').then((response) => response.json().then((json) => {
+$(document).ready(function(){
+    fetch('data.json').then((response) => response.json().then(render));
+});
+function render(json) {
+    $('#content').html('');
 	for (const [n, obj] of Object.entries(json)) {
-		$('<img />', { class: 'thumbnail', src: `thumbnail/32/${n}` }).appendTo($('#content'));
+        if (!obj.caption) {
+            $('<img />', { class: 'thumbnail', src: `thumbnail/512/${n}` }).appendTo($('#content'));
+            $('<br/>').appendTo($('#content'));
+            txt = $('<textarea placeholder="enter caption, hit enter to save"></textarea>');
+            txt.appendTo($('#content'));
+            txt.focus();
+            txt.keypress(function(ev) {
+                if(ev.which == 13) {
+                    ev.preventDefault();
+                    obj.caption = txt.val();
+                    $.post('/', {'id': n, 'caption': txt.val()});
+                    render(json);
+                }
+            });
+            break;
+        }
 	}
-}));
+};
 
 </script>
 </html>
