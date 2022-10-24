@@ -2,6 +2,7 @@
 """
 Web-based dataset editing.
 """
+import json
 from PIL import Image
 import argparse
 import os
@@ -49,6 +50,30 @@ async def data(request):
     return web.json_response(
         request.config_dict["ds"]._data, headers={"Pragma": "no-cache"}
     )
+
+
+@routes.post("/caption")
+async def caption_receiver(request):
+    received = await request.json()
+    try:
+        id = int(received["id"])
+    except (KeyError, ValueError):
+        return json_error('"id" must be int')
+    try:
+        caption = str(received["caption"])
+    except KeyError:
+        return json_error('"caption" was not provided')
+    try:
+        obj = request.config_dict["ds"]._data[id]
+    except KeyError:
+        return json_error("specified id does not exist")
+    obj["caption"] = caption
+    request.config_dict["ds"].add(obj)
+    return web.Response(status=204)
+
+
+def json_error(reason):
+    return web.json_response({"status": "error", "reason": reason})
 
 
 @routes.get("/thumbnail/{sz}/{n}")
