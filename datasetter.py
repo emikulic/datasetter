@@ -55,12 +55,9 @@ async def data(request):
 async def thumbnail(request):
     n = int(request.match_info.get("n", ""))
     sz = int(request.match_info.get("sz", ""))
-    o = request.config_dict["ds"]._data[n]
-    img = util.load_and_crop(o, sz)
-    s = BytesIO()
-    img.save(s, format="jpeg", quality=95)
-    # TODO: caching
-    return web.Response(body=s.getvalue(), content_type="image/jpeg")
+    assert sz <= 1024
+    img = request.config_dict["ds"].cropped_jpg(n, sz)
+    return web.Response(body=img, content_type="image/jpeg")
 
 
 def main():

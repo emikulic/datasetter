@@ -6,9 +6,34 @@ from PIL import Image, ImageFile, ImageOps
 import json
 import os
 import numpy as np
+import sqlite3
+import io
 
 # Don't throw exception when a file only partially loads.
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+
+class DB:
+    """
+    Presents sqlite3 as a dict.
+    """
+
+    def __init__(self, fn):
+        self._db = sqlite3.connect(fn)
+        self._db.execute("CREATE TABLE IF NOT EXISTS db(key PRIMARY KEY, value)")
+
+    def __getitem__(self, key):
+        assert type(key) is str
+        ret = self._db.execute("SELECT value FROM db WHERE key=?", (key,)).fetchone()
+        if ret is None:
+            raise KeyError()
+        return ret[0]
+
+    def __setitem__(self, key, value):
+        assert type(key) is str
+        assert type(value) is bytes
+        self._db.execute("REPLACE INTO db VALUES(?, ?)", (key, value))
+        self._db.commit()
 
 
 class Dataset:
@@ -18,6 +43,7 @@ class Dataset:
         self._fns = set()  # Set of original filenames.
         if os.path.exists(fn):
             self._load(fn)
+        self._cache = DB(f"{fn}.cache")
 
     def _load(self, fn):
         """
@@ -53,6 +79,30 @@ class Dataset:
         with open(self._fn, "a") as f:
             json.dump(obj, f)
             f.write("\n")
+
+    def cropped_jpg(self, n, sz):
+        """
+        Returns JPEG image data for object n, cropped, and scaled to size sz.
+        """
+        o = self._data[n]
+        key = {
+            "md5": o["md5"],
+            "x": o["x"],
+            "y": o["y"],
+            "w": o["w"],
+            "h": o["h"],
+            "sz": sz,
+        }
+        key = json.dumps(key, sort_keys=True)
+        try:
+            return self._cache[key]
+        except KeyError:
+            img = load_and_crop(o, sz)
+            s = io.BytesIO()
+            img.save(s, format="jpeg", quality=95)
+            img = s.getvalue()
+            self._cache[key] = img
+            return img
 
 
 def rgbify(i):
