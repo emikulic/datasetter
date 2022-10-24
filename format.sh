@@ -4,4 +4,4 @@
 # Pre-reqs:
 # pip install black
 set -x
-black add.py util.py prep.py datasetter.py
+black add.py util.py prep.py datasetter.py autocaption/autocaption.py
