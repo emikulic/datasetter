@@ -85,6 +85,10 @@ async def thumbnail(request):
     return web.Response(body=img, content_type="image/jpeg")
 
 
+async def strip_headers(request, response):
+    del response.headers["Server"]
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--port", type=int, default=8001)
@@ -94,6 +98,7 @@ def main():
     args = p.parse_args()
 
     app = web.Application()
+    app.on_response_prepare.append(strip_headers)
     app.add_routes(routes)
     app["args"] = args
     app["ds"] = Dataset(args.dsfile)
