@@ -77,7 +77,7 @@ def main():
             "needs_rebuild": 1,
         }
         if args.caption:
-            obj["caption"] = caption
+            obj["caption"] = args.caption
         center_crop(obj)
         ds.add(obj)
 
