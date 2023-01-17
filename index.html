@@ -21,21 +21,34 @@ fetch('title.txt').then((response) => response.text().then((text) => document.ti
 
 $(document).ready(function(){
     fetch('data.json').then((response) => response.json().then(render));
+    $(window).bind('keydown', function(event) {
+        var key = String.fromCharCode(event.which).toLowerCase();
+        if (key == 's' && (event.ctrlKey || event.metaKey)) {
+            event.preventDefault();
+            data[current_id].skip = true;
+            $.post('/update', JSON.stringify({'id': current_id, 'skip': true}));
+            render(data);
+        }
+    });
 });
+var current_id = null;
+var data = null;
 function render(json) {
+    data = json;
     $('#content').html('');
     for (const [n, obj] of Object.entries(json)) {
-        if (!obj.caption) {
+        if (!obj.caption && !obj.skip) {
+            current_id = n;
             $('<img />', { class: 'thumbnail', src: `thumbnail/512/${n}` }).appendTo($('#content'));
             $('<br/>').appendTo($('#content'));
-            txt = $('<textarea placeholder="enter caption, hit enter to save"></textarea>');
+            txt = $('<textarea placeholder="enter caption, hit enter to save\nhit ctrl-s to mark as skipped"></textarea>');
             txt.appendTo($('#content'));
             txt.focus();
             txt.keypress(function(ev) {
                 if(ev.which == 13) {
                     ev.preventDefault();
                     obj.caption = txt.val();
-                    $.post('/caption', JSON.stringify({'id': n, 'caption': txt.val()}));
+                    $.post('/update', JSON.stringify({'id': n, 'caption': txt.val()}));
                     render(json);
                 }
             });

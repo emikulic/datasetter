@@ -80,6 +80,13 @@ class Dataset:
             json.dump(obj, f)
             f.write("\n")
 
+    def update(self, obj):
+        self._memadd(obj)
+        with open(self._fn, "w") as f:
+            for obj in self._data.values():
+                json.dump(obj, f)
+                f.write("\n")
+
     def cropped_jpg(self, n, sz):
         """
         Returns JPEG image data for object n, cropped, and scaled to size sz.

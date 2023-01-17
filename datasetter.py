@@ -52,23 +52,26 @@ async def data(request):
     )
 
 
-@routes.post("/caption")
-async def caption_receiver(request):
+@routes.post("/update")
+async def update_receiver(request):
     received = await request.json()
     try:
         id = int(received["id"])
     except (KeyError, ValueError):
         return json_error('"id" must be int')
     try:
-        caption = str(received["caption"])
-    except KeyError:
-        return json_error('"caption" was not provided')
-    try:
         obj = request.config_dict["ds"]._data[id]
     except KeyError:
         return json_error("specified id does not exist")
-    obj["caption"] = caption
-    request.config_dict["ds"].add(obj)
+    if "caption" in received:
+        try:
+            caption = str(received["caption"])
+        except KeyError:
+            return json_error('"caption" was not provided')
+        obj["caption"] = caption
+    if "skip" in received:
+        obj["skip"] = received["skip"]
+    request.config_dict["ds"].update(obj)
     return web.Response(status=204)
 
 
