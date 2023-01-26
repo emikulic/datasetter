@@ -89,7 +89,8 @@ async def update_receiver(request):
         for k in ["manual_rot", "rot"]:
             obj[k] = int(received[k])
         obj["manual_ts"] = now()
-    request.config_dict["ds"].update(obj)
+    append = request.config_dict["args"].append
+    request.config_dict["ds"].update(obj, append)
     return web.Response(status=204)
 
 
@@ -137,6 +138,11 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--port", type=int, default=8001)
     p.add_argument("--host", type=str, default="127.0.0.1", help="Bind address.")
+    p.add_argument(
+        "--append",
+        help="Only append to the JSON file.",
+        action="store_true",
+    )
     p.add_argument("dsfile", help="JSON dataset file to operate on.")
     args = p.parse_args()
 

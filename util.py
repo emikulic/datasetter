@@ -80,7 +80,11 @@ class Dataset:
             json.dump(obj, f)
             f.write("\n")
 
-    def update(self, obj):
+    def update(self, obj, append):
+        if append:
+            # Append only mode: don't rewrite the whole file.
+            self.add(obj)
+            return
         self._memadd(obj)
         with open(self._fn, "w") as f:
             for obj in self._data.values():
