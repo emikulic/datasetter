@@ -103,11 +103,11 @@ function crop() {
         let out = $('<div style="float:left; margin:5px;">');
         let img = $('<img />', {
                       class: 'thumbnail',
-                      width: sz,
-                      height: sz,
                       style: 'cursor:pointer',
                       src: `crop/${id}/${x}/${y}/${wh}/${sz}`
                   })
+                      .width(sz)
+                      .height(sz)
                       .attr('id', `click${key}`)
                       .appendTo(out);
         $('<div>').text(txt).appendTo(out);
