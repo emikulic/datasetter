@@ -1,19 +1,33 @@
 # datasetter
+
 Tooling for building datasets.
 
-Separate phase / tool for adding images, for security:
+## Pipeline
 
-    ./add.py ds_name.json dir1 file1 file2... [--caption="optional default caption"]
+First, use a separate tool for adding images. For security, the web UI can't
+add or change filenames. Inputs have to be relative to the dataset dir that
+contains the JSON file, although symlinks are allowed.
 
-Then run a webserver to be able to edit metadata:
+```shell
+cd dataset/
+~/datasetter/add.py ds_name.json dir1 file1 file2... [--caption="optional default caption"]
+```
 
-    ./datasetter.py ds_name.json
+Then run a webserver to edit metadata:
 
-Finally, a CLI to generate a dataset directory:
+```shell
+~/datasetter/datasetter.py ds_name.json
+```
 
-    ./prep.py dataset ds1.json ds2.json ds3.json
+Finally, a CLI to generate an output directory:
+
+```shell
+~/datasetter/prep.py outdir ds_name.json ds2.json ds3.json
+```
 
 Need to make this work incrementally at some point.
+
+## Schema
 
 JSON looks like: text file with one line per data item:
 
@@ -35,7 +49,10 @@ JSON looks like: text file with one line per data item:
 If a record with the same 'n' repeats, last wins.
 This way, the dataset JSON can be updated by appending records.
 
-# tests
+## Tests
+
 To run tests, use
 
-    python -m unittest discover
+```shell
+python -m unittest discover
+```

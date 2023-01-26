@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
 Add images to a dataset.
+
+If a filename is already in the dataset, it will be skipped.
 """
 import argparse
 import os
@@ -47,6 +49,25 @@ def main():
     p.add_argument("inputs", nargs="+", help="Dirs and files to add.")
     args = p.parse_args()
 
+    # Check inputs are relative to the dsfile.
+    dsdir = os.path.dirname(os.path.abspath(args.dsfile))
+    if dsdir == "":
+        dsdir = "."
+    print(f"working relative to {dsdir!r}")
+
+    error = False
+    for i in args.inputs:
+        if not os.path.exists(i):
+            print(f"error: input {i!r} doesn't exist")
+            error = True
+        rel = os.path.relpath(i, dsdir)
+        if rel.startswith("../"):
+            print(f"error: input {i!r} is outside {dsdir!r} (rel path {rel!r})")
+            error = True
+    if error:
+        print("exiting due to bad inputs")
+
+    # Load dataset.
     ds = Dataset(args.dsfile)
 
     # Build list of inputs.
@@ -57,7 +78,7 @@ def main():
         else:
             assert os.path.isfile(i), i
             fns.append(i)
-    fns = [os.path.realpath(i) for i in fns]
+    fns = [os.path.relpath(i, dsdir) for i in fns]
     fns.sort()
 
     # Process.
