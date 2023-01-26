@@ -67,6 +67,9 @@ async def update_receiver(request):
         obj["caption"] = caption
     if "skip" in received:
         obj["skip"] = received["skip"]
+    if "manual_crop" in received:
+        for k in ["manual_crop", "x", "y", "w", "h"]:
+            obj[k] = int(received[k])
     request.config_dict["ds"].update(obj)
     return web.Response(status=204)
 
@@ -75,12 +78,26 @@ def json_error(reason):
     return web.json_response({"status": "error", "reason": reason})
 
 
-@routes.get("/thumbnail/{sz}/{n}")
-async def thumbnail(request):
+@routes.get("/thumbnail/{n}/{sz}")
+async def thumbnail_receiver(request):
     n = int(request.match_info.get("n", ""))
     sz = int(request.match_info.get("sz", ""))
     assert sz <= 1024
     img = request.config_dict["ds"].cropped_jpg(n, sz)
+    return web.Response(body=img, content_type="image/jpeg")
+
+
+@routes.get("/crop/{n}/{x}/{y}/{wh}/{sz}")
+async def crop_receiver(request):
+    n = int(request.match_info.get("n", ""))
+    x = int(request.match_info.get("x", ""))
+    y = int(request.match_info.get("y", ""))
+    wh = int(request.match_info.get("wh", ""))
+    sz = int(request.match_info.get("sz", ""))
+    assert sz <= 1024
+    assert x >= 0
+    assert y >= 0
+    img = request.config_dict["ds"].crop_preview(n, x, y, wh, sz)
     return web.Response(body=img, content_type="image/jpeg")
 
 

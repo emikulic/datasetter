@@ -89,7 +89,8 @@ class Dataset:
 
     def cropped_jpg(self, n, sz):
         """
-        Returns JPEG image data for object n, cropped, and scaled to size sz.
+        Returns JPEG image data for object n, cropped and scaled.
+        Populates the cache.
         """
         o = self._data[n]
         key = {
@@ -104,12 +105,32 @@ class Dataset:
         try:
             return self._cache[key]
         except KeyError:
+            # TODO: change this to verbose logging.
+            print(f"cropped_jpg cache miss for {key}")
             img = load_and_crop(o, sz)
             s = io.BytesIO()
             img.save(s, format="jpeg", quality=95)
             img = s.getvalue()
             self._cache[key] = img
             return img
+
+    def crop_preview(self, n, x, y, wh, sz):
+        """
+        Returns JPEG image data for object n, cropped and scaled.
+        This is for previews in the web UI and is not cached.
+        """
+        o = self._data[n].copy()
+        o["x"] = x
+        o["y"] = y
+        o["w"] = wh
+        o["h"] = wh
+        o["sz"] = sz
+        # TODO: change this to verbose logging.
+        print(f"crop_preview for {o}")
+        img = load_and_crop(o, sz)
+        s = io.BytesIO()
+        img.save(s, format="jpeg", quality=95)
+        return s.getvalue()
 
 
 def rgbify(i):
@@ -146,6 +167,12 @@ def load_and_crop(o, sz):
     assert img.width == o["orig_w"]  # TODO: warn instead
     assert img.height == o["orig_h"]
     x, y, w, h = o["x"], o["y"], o["w"], o["h"]
+    assert x >= 0
+    assert y >= 0
+    assert w > 0
+    assert h > 0
+    assert sz > 0
+    assert sz <= 1024
     img = img.crop((x, y, x + w, y + h))
     img = img.resize((sz, sz), Image.Resampling.BICUBIC)
     return img
