@@ -32,6 +32,13 @@ async def index_html(request):
     )
 
 
+@routes.get("/index.js")
+async def index_js(request):
+    with open(f"{WWW}/index.js", "r") as f:
+        s = f.read()
+    return web.Response(text=s, content_type="text/javascript")
+
+
 @routes.get("/jquery.js")
 async def jquery_js(request):
     with open(f"{WWW}/jquery.js", "r") as f:
