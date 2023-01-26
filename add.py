@@ -45,6 +45,11 @@ def center_crop(obj):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--caption", default=None, help="Optional default caption.")
+    p.add_argument(
+        "--onefile",
+        help="Only add one file per input subdirectory.",
+        action="store_true",
+    )
     p.add_argument("dsfile", help="JSON dataset file to add to.")
     p.add_argument("inputs", nargs="+", help="Dirs and files to add.")
     args = p.parse_args()
@@ -82,10 +87,21 @@ def main():
     fns.sort()
 
     # Process.
+    seen_dirs = set()
     for fn in fns:
+        # Skip seen files.
         if ds.seen_fn(fn):
-            print(f"seen {fn}")
+            print(f"seen {fn!r}")
             continue
+
+        # Honor onefile if set.
+        if args.onefile:
+            subdir = os.path.dirname(fn)
+            if subdir in seen_dirs:
+                print(f"skipping {fn!r} because seen {subdir!r}")
+                continue
+            seen_dirs.add(subdir)
+
         print(f"processing {fn}")
         img = util.load_image(fn)
         obj = {
