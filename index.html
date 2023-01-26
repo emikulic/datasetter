@@ -9,6 +9,9 @@
 </style>
 </head>
 <body>
+<div id="header"><span id="ds_name">...</span> | <span id="ds_size">...</span> inputs</div>
+<hr>
+Captioning:<br>
 <div id="content"></div>
 </body>
 <script type="text/javascript" src="jquery.js"></script>
@@ -16,11 +19,19 @@
 
 'use strict;'
 
-// Put dataset name into page title.
-fetch('title.txt').then((response) => response.text().then((text) => document.title = `${text} - datasetter`));
 
+// Main.
 $(document).ready(function(){
+    // Show dataset name.
+    fetch('title.txt').then((response) => response.text().then((text) => {
+        document.title = `${text} - datasetter`;
+        $('#ds_name').text(text);
+    }));
+
+    // Load data.
     fetch('data.json').then((response) => response.json().then(render));
+
+    // Bind keys.
     $(window).bind('keydown', function(event) {
         var key = String.fromCharCode(event.which).toLowerCase();
         if (key == 's' && (event.ctrlKey || event.metaKey)) {
@@ -31,17 +42,21 @@ $(document).ready(function(){
         }
     });
 });
+
+// ---
+
 var current_id = null;
 var data = null;
 function render(json) {
     data = json;
+    $('#ds_size').text(Object.keys(data).length);
     $('#content').html('');
     for (const [n, obj] of Object.entries(json)) {
         if (!obj.caption && !obj.skip) {
             current_id = n;
             $('<img />', { class: 'thumbnail', src: `thumbnail/512/${n}` }).appendTo($('#content'));
             $('<br/>').appendTo($('#content'));
-            txt = $('<textarea placeholder="enter caption, hit enter to save\nhit ctrl-s to mark as skipped"></textarea>');
+            let txt = $('<textarea placeholder="enter caption, hit enter to save\nhit ctrl-s to mark as skipped"></textarea>');
             txt.appendTo($('#content'));
             txt.focus();
             txt.keypress(function(ev) {
