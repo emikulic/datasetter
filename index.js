@@ -42,6 +42,12 @@ function go_to_id(id) {
     window.location.search = '?' + s.toString();
 }
 
+function go_to_mode(mode) {
+    let s = new URLSearchParams(window.location.search);
+    s.set('mode', mode);
+    window.location.search = '?' + s.toString();
+}
+
 var current_id = null;
 function caption() {
     $('#content').html('Caption:<br>');
