@@ -15,7 +15,9 @@ $(document).ready(function() {
         data = json;
         $('#ds_size').text(Object.keys(data).length);
         const mode = new URLSearchParams(window.location.search).get('mode');
-        if (mode == 'crop') {
+        if (mode == 'catalog') {
+            catalog();
+        } else if (mode == 'crop') {
             crop();
         } else if (mode == 'rotate') {
             rotate();
@@ -48,8 +50,39 @@ function go_to_mode(mode) {
     window.location.search = '?' + s.toString();
 }
 
-var current_id = null;
+function catalog() {
+    const sz = 256;  // Preview size.
+    let content = $('#content').html('Catalog:<br>');
+    const id = get_id_from_url();
+    for (const [n, md] of Object.entries(data)) {
+        let a = $('<a>').attr('href', `?mode=caption&id=${n}`);
+        // Trade-off: load full size thumbnails to hit the cache, but then scale
+        // them down in the browser.
+        let img = $('<img />', {
+                      style: 'float:left; margin:5px;',
+                      loading: 'lazy',
+                      class: 'thumbnail',
+                      src: `thumbnail/${n}/${SZ}`
+                  })
+                      .width(sz)
+                      .height(sz)
+                      .appendTo(a);
+        if (md.skip) {
+            // Fade skipped images.
+            img.css('opacity', 0.3);
+        }
+        if (n == id) {
+            // Highlight selected image.
+            img.css('border', '2px solid red');
+            img.css('margin', '3px');
+            // TODO: img[0].scrollIntoView(); (doesn't work)
+        }
+        a.appendTo(content);
+    }
+}
+
 function caption() {
+    var current_id = null;
     $('#content').html('Caption:<br>');
     $('#mode_caption').attr('class', 'mode_select');
     for (const [n, obj] of Object.entries(data)) {

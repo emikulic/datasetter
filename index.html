@@ -13,11 +13,13 @@
 </head>
 <body>
 <div id="header">
-    <span id="ds_name">...</span> |
-    <span id="ds_size">...</span> inputs |
+    <span id="ds_name">...</span>
+    (<span id="ds_size">...</span> inputs) |
     <!-- make the link change the query string to force a page reload -->
-    <a id="mode_caption" href="#" onclick="go_to_mode('caption')">caption</a> |
-    <a id="mode_crop" href="#" onclick="go_to_mode('crop')">crop</a> |
+    mode:
+    <a id="mode_catalog" href="#" onclick="go_to_mode('catalog')">catalog</a> /
+    <a id="mode_caption" href="#" onclick="go_to_mode('caption')">caption</a> /
+    <a id="mode_crop" href="#" onclick="go_to_mode('crop')">crop</a> /
     <a id="mode_rotate" href="#" onclick="go_to_mode('rotate')">rotate</a>
 </div>
 <hr>
