@@ -82,41 +82,52 @@ function catalog() {
 }
 
 function caption() {
-    var current_id = null;
-    $('#content').html('Caption:<br>');
+    const id = get_id_from_url();
+    const md = data[id];
+    let content = $('#content').html('');
+    $('<div>')
+        .text(`Caption: ${id + 1} / ${Object.keys(data).length} (n = ${md.n})`)
+        .appendTo(content);
     $('#mode_caption').attr('class', 'mode_select');
-    for (const [n, obj] of Object.entries(data)) {
-        if (!obj.caption && !obj.skip) {
-            current_id = n;
-            $('<img />', {class: 'thumbnail', src: `thumbnail/${n}/${SZ}`})
-                .appendTo($('#content'));
-            $('<br/>').appendTo($('#content'));
-            let txt = $(
-                '<textarea placeholder="enter caption, hit enter to save\nhit ctrl-s to mark as skipped"></textarea>');
-            txt.appendTo($('#content'));
-            txt.focus();
-            txt.keypress(function(ev) {
-                if (ev.which == 13) {
-                    ev.preventDefault();
-                    obj.caption = txt.val();
-                    $.post(
-                        'update',
-                        JSON.stringify({'id': n, 'caption': txt.val()}));
-                    caption();
-                }
-            });
-            break;
+    $('<img />', {class: 'thumbnail', src: `thumbnail/${id}/${SZ}`})
+        .width(SZ)
+        .height(SZ)
+        .appendTo(content);
+    $('<br/>').appendTo(content);
+    let txt =
+        $('<textarea placeholder="enter caption, hit enter to save\nhit ctrl-s to mark as skipped"></textarea>')
+            .appendTo(content);
+    txt.focus();
+    txt.keypress(function(ev) {
+        if (ev.which == 13) {
+            ev.preventDefault();
+            $.post('update', JSON.stringify({'id': id, 'caption': txt.val()}))
+                .then(() => go_to_id(id + 1));
         }
+    });
+    if (md.skip) {
+        $('<p class="warn">ALREADY SKIPPED</p>').appendTo(content);
     }
+    $('<div>')
+        .text(
+            `Press PageUp or PageDown to move to the prev/next image without saving.`)
+        .appendTo(content);
+    $('<pre>').text(JSON.stringify(md, null, 2)).appendTo(content);
 
     // Bind keys.
     $(window).bind('keydown', function(event) {
+        if (event.which == 33) {  // PageUp
+            go_to_id(id - 1);
+        } else if (event.which == 34) {  // PageDown
+            go_to_id(id + 1);
+        }
         var key = String.fromCharCode(event.which).toLowerCase();
         if (key == 's' && (event.ctrlKey || event.metaKey)) {
             event.preventDefault();
-            data[current_id].skip = true;
-            $.post('update', JSON.stringify({'id': current_id, 'skip': true}));
-            caption();
+            $.post('update', JSON.stringify({
+                 'id': id,
+                 'skip': 'during captioning'
+             })).then(() => go_to_id(id + 1));
         }
     });
 }
