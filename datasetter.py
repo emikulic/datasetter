@@ -13,18 +13,14 @@ import aiohttp
 import logging
 from io import BytesIO
 
-# import urllib.parse
-
-
+WWW = os.path.dirname(__file__)
 logging.basicConfig(level=logging.INFO)
-
-
 routes = web.RouteTableDef()
 
 
 @routes.get("/")
 async def index_html(request):
-    with open("index.html", "r") as f:
+    with open(f"{WWW}/index.html", "r") as f:
         s = f.read()
     return web.Response(
         text=s, content_type="text/html", headers={"Pragma": "no-cache"}
@@ -33,7 +29,7 @@ async def index_html(request):
 
 @routes.get("/jquery.js")
 async def jquery_js(request):
-    with open("jquery.js", "r") as f:
+    with open(f"{WWW}/jquery.js", "r") as f:
         s = f.read()
     return web.Response(text=s, content_type="text/javascript")
 
@@ -96,7 +92,6 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--port", type=int, default=8001)
     p.add_argument("--host", type=str, default="127.0.0.1", help="Bind address.")
-    # p.add_argument("--size", type=int, default=512, help="Default output image size.")
     p.add_argument("dsfile", help="JSON dataset file to operate on.")
     args = p.parse_args()
 
