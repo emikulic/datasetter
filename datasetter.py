@@ -12,10 +12,15 @@ from aiohttp import web
 import aiohttp
 import logging
 from io import BytesIO
+import time
 
 WWW = os.path.dirname(__file__)
 logging.basicConfig(level=logging.INFO)
 routes = web.RouteTableDef()
+
+
+def now():
+    return int(time.time())
 
 
 @routes.get("/")
@@ -65,11 +70,14 @@ async def update_receiver(request):
         except KeyError:
             return json_error('"caption" was not provided')
         obj["caption"] = caption
+        obj["manual_ts"] = now()
     if "skip" in received:
         obj["skip"] = received["skip"]
+        obj["manual_ts"] = now()
     if "manual_crop" in received:
         for k in ["manual_crop", "x", "y", "w", "h"]:
             obj[k] = int(received[k])
+        obj["manual_ts"] = now()
     request.config_dict["ds"].update(obj)
     return web.Response(status=204)
 
