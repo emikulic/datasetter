@@ -9,6 +9,7 @@ import os
 import hashlib
 from util import Dataset
 import util
+import PIL
 
 
 def walk_dir(path):
@@ -103,7 +104,11 @@ def main():
             seen_dirs.add(subdir)
 
         print(f"processing {fn}")
-        img = util.load_image(fn)
+        try:
+            img = util.load_image(fn)
+        except PIL.UnidentifiedImageError as e:
+            print(f"WARN: skipping {fn} because {e}")
+            continue
         obj = {
             "fn": fn,
             "md5": md5(fn),
