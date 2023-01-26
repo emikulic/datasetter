@@ -3,7 +3,7 @@
 // Main.
 const SZ = 512;
 var data = null;  // Global for debugging.
-$(document).ready(function(){
+$(document).ready(function() {
     // Show dataset name.
     fetch('title.txt').then((response) => response.text().then((text) => {
         document.title = `${text} - datasetter`;
@@ -47,16 +47,20 @@ function caption() {
     for (const [n, obj] of Object.entries(data)) {
         if (!obj.caption && !obj.skip) {
             current_id = n;
-            $('<img />', { class: 'thumbnail', src: `thumbnail/${n}/${SZ}` }).appendTo($('#content'));
+            $('<img />', {class: 'thumbnail', src: `thumbnail/${n}/${SZ}`})
+                .appendTo($('#content'));
             $('<br/>').appendTo($('#content'));
-            let txt = $('<textarea placeholder="enter caption, hit enter to save\nhit ctrl-s to mark as skipped"></textarea>');
+            let txt = $(
+                '<textarea placeholder="enter caption, hit enter to save\nhit ctrl-s to mark as skipped"></textarea>');
             txt.appendTo($('#content'));
             txt.focus();
             txt.keypress(function(ev) {
-                if(ev.which == 13) {
+                if (ev.which == 13) {
                     ev.preventDefault();
                     obj.caption = txt.val();
-                    $.post('update', JSON.stringify({'id': n, 'caption': txt.val()}));
+                    $.post(
+                        'update',
+                        JSON.stringify({'id': n, 'caption': txt.val()}));
                     caption();
                 }
             });
@@ -82,27 +86,32 @@ function crop() {
     const id = get_id_from_url();
     const md = data[id];
     let content = $('#content').html('');
-    $('<div>').text(`Crop: ${id + 1} / ${Object.keys(data).length} (n = ${md.n}) |
-    original size ${md.orig_w} x ${md.orig_h}`).appendTo(content);
+    $('<div>')
+        .text(`Crop: ${id + 1} / ${Object.keys(data).length} (n = ${md.n}) |
+    original size ${md.orig_w} x ${md.orig_h}`)
+        .appendTo(content);
 
     function make_preview(key, x, y, wh, txt) {
         let out = $('<div style="float:left; margin:5px;">');
         let img = $('<img />', {
-            class: 'thumbnail',
-            width: sz,
-            height: sz,
-            style: 'cursor:pointer',
-            src: `crop/${id}/${x}/${y}/${wh}/${sz}` }).attr('id', `click${key}`).appendTo(out);
+                      class: 'thumbnail',
+                      width: sz,
+                      height: sz,
+                      style: 'cursor:pointer',
+                      src: `crop/${id}/${x}/${y}/${wh}/${sz}`
+                  })
+                      .attr('id', `click${key}`)
+                      .appendTo(out);
         $('<div>').html(txt).appendTo(out);
 
         img.click(() => $.post('update', JSON.stringify({
-                'id': md.n,
-                'manual_crop': 1,
-                'x': x,
-                'y': y,
-                'w': wh,
-                'h': wh,
-            })).then(() => go_to_id(id + 1)));
+                             'id': md.n,
+                             'manual_crop': 1,
+                             'x': x,
+                             'y': y,
+                             'w': wh,
+                             'h': wh,
+                         })).then(() => go_to_id(id + 1)));
         return out;
     }
 
@@ -119,7 +128,7 @@ function crop() {
         let wh = md.orig_w;
         let mid = ((md.orig_h - wh) / 2) >> 0;
         let btm = md.orig_h - wh;
-        make_preview(1, 0, 0,   wh, '1: Top').appendTo(content);
+        make_preview(1, 0, 0, wh, '1: Top').appendTo(content);
         make_preview(2, 0, mid, wh, '2: Middle').appendTo(content);
         make_preview(3, 0, btm, wh, '3: Bottom').appendTo(content);
     }
@@ -129,9 +138,16 @@ function crop() {
         $('<p class="warn">ALREADY MANUALLY CROPPED</p>').appendTo(content);
     }
     $('<p>').appendTo(content);
-    $('<div>').text(`Press or click 1/2/3 to choose a crop and move on to the next image.`).appendTo(content);
-    $('<div>').text(`Press S to mark the image as skipped and move on.`).appendTo(content);
-    $('<div>').text(`Press A or D to move to the prev/next image without saving.`).appendTo(content);
+    $('<div>')
+        .text(
+            `Press or click 1/2/3 to choose a crop and move on to the next image.`)
+        .appendTo(content);
+    $('<div>')
+        .text(`Press S to mark the image as skipped and move on.`)
+        .appendTo(content);
+    $('<div>')
+        .text(`Press A or D to move to the prev/next image without saving.`)
+        .appendTo(content);
     $('<pre>').text(JSON.stringify(md, null, 2)).appendTo(content);
 
     // Bind keys.
@@ -148,9 +164,9 @@ function crop() {
         }
         if (key == 's') {
             $.post('update', JSON.stringify({
-                'id': md.n,
-                'skip': 'during manual crop',
-            })).then(() => go_to_id(id + 1));
+                 'id': md.n,
+                 'skip': 'during manual crop',
+             })).then(() => go_to_id(id + 1));
         }
     });
 }
