@@ -8,14 +8,17 @@
     textarea { width: 512px; height: 100px; }
     a { color:#aaf; }
     p.warn { color:#faa; }
+    .mode_select { font-weight:bold; color:#fff; }
 </style>
 </head>
 <body>
 <div id="header">
     <span id="ds_name">...</span> |
     <span id="ds_size">...</span> inputs |
+    <!-- make the link change the query string to force a page reload -->
     <a id="mode_caption" href="?mode=caption">caption</a> |
-    <a id="mode_crop" href="?mode=crop">crop</a>
+    <a id="mode_crop" href="?mode=crop">crop</a> |
+    <a id="mode_rotate" href="?mode=rotate">rotate</a>
 </div>
 <hr>
 <div id="content"></div>

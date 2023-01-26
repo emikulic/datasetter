@@ -85,6 +85,10 @@ async def update_receiver(request):
         for k in ["manual_crop", "x", "y", "w", "h"]:
             obj[k] = int(received[k])
         obj["manual_ts"] = now()
+    if "manual_rot" in received:
+        for k in ["manual_rot", "rot"]:
+            obj[k] = int(received[k])
+        obj["manual_ts"] = now()
     request.config_dict["ds"].update(obj)
     return web.Response(status=204)
 
@@ -113,6 +117,15 @@ async def crop_receiver(request):
     assert x >= 0
     assert y >= 0
     img = request.config_dict["ds"].crop_preview(n, x, y, wh, sz)
+    return web.Response(body=img, content_type="image/jpeg")
+
+
+@routes.get("/rotate/{n}/{rot}/{sz}")
+async def rotate_receiver(request):
+    n = int(request.match_info.get("n", ""))
+    rot = int(request.match_info.get("rot", ""))
+    sz = int(request.match_info.get("sz", ""))
+    img = request.config_dict["ds"].rotate_preview(n, rot, sz)
     return web.Response(body=img, content_type="image/jpeg")
 
 

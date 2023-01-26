@@ -39,9 +39,10 @@ JSON looks like: text file with one line per data item:
  fsz: 123456,                  # Size of original file.
  orig_w, orig_h: int,          # Width and height of original file.
  x, y, w, h: int,              # Crop coords.
- rot: 0..3,                    # How many rot90s() should be applied after crop.
+ rot: 0..3,                    # How many 90deg CCW rotations should be applied after crop.
  caption: 'blah...',           # String caption.
  manual_crop: 1 or absent,     # If 1, crop coords were set manually.
+ manual_rot: 1 or absent,      # If 1, rotation was set manually.
  manual_ts: (int timestamp),   # Set to the time when this metadata was manually changed, otherwise absent.
  skip: 'reason',               # If set, exclude from output dataset for the given reason.
 }

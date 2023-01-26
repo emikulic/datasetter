@@ -17,6 +17,8 @@ $(document).ready(function() {
         const mode = new URLSearchParams(window.location.search).get('mode');
         if (mode == 'crop') {
             crop();
+        } else if (mode == 'rotate') {
+            rotate();
         } else {
             caption();
         }
@@ -43,7 +45,7 @@ function go_to_id(id) {
 var current_id = null;
 function caption() {
     $('#content').html('Caption:<br>');
-    $('#mode_caption').css('font-weight', 'bold');
+    $('#mode_caption').attr('class', 'mode_select');
     for (const [n, obj] of Object.entries(data)) {
         if (!obj.caption && !obj.skip) {
             current_id = n;
@@ -82,7 +84,7 @@ function caption() {
 
 function crop() {
     const sz = 256;  // Preview size.
-    $('#mode_crop').css('font-weight', 'bold');
+    $('#mode_crop').attr('class', 'mode_select');
     const id = get_id_from_url();
     const md = data[id];
     let content = $('#content').html('');
@@ -102,7 +104,7 @@ function crop() {
                   })
                       .attr('id', `click${key}`)
                       .appendTo(out);
-        $('<div>').html(txt).appendTo(out);
+        $('<div>').text(txt).appendTo(out);
 
         img.click(() => $.post('update', JSON.stringify({
                              'id': md.n,
@@ -166,6 +168,82 @@ function crop() {
             $.post('update', JSON.stringify({
                  'id': md.n,
                  'skip': 'during manual crop',
+             })).then(() => go_to_id(id + 1));
+        }
+    });
+}
+
+function rotate() {
+    const sz = 256;  // Preview size.
+    $('#mode_rotate').attr('class', 'mode_select');
+    const id = get_id_from_url();
+    const md = data[id];
+    let content = $('#content').html('');
+    $('<div>')
+        .text(`Rotate: ${id + 1} / ${Object.keys(data).length} (n = ${md.n})`)
+        .appendTo(content);
+
+    function make_preview(key, rot) {
+        let out = $('<div style="float:left; margin:5px;">');
+        let img = $('<img />', {
+                      class: 'thumbnail',
+                      width: sz,
+                      height: sz,
+                      style: 'cursor:pointer',
+                      src: `rotate/${id}/${rot}/${sz}`
+                  })
+                      .attr('id', `click${key}`)
+                      .appendTo(out);
+        $('<div>').text(`Press ${key}`).appendTo(out);
+
+        img.click(() => $.post('update', JSON.stringify({
+                             'id': md.n,
+                             'manual_rot': 1,
+                             'rot': rot,
+                         })).then(() => go_to_id(id + 1)));
+        return out;
+    }
+
+    make_preview('1', 1).appendTo(content);
+    make_preview('2', 0).appendTo(content);
+    make_preview('3', 3).appendTo(content);
+    make_preview('4', 2).appendTo(content);
+
+    $('<div style="clear:both">').appendTo(content);
+    if (md.manual_rot) {
+        $('<p class="warn">ALREADY MANUALLY ROTATED</p>').appendTo(content);
+    }
+    $('<p>').appendTo(content);
+    $('<div>')
+        .text(
+            `Press or click 1/2/3/4 to choose a rotation and move on to the next image.`)
+        .appendTo(content);
+    // TODO: factor this:
+    $('<div>')
+        .text(`Press S to mark the image as skipped and move on.`)
+        .appendTo(content);
+    $('<div>')
+        .text(`Press A or D to move to the prev/next image without saving.`)
+        .appendTo(content);
+    $('<pre>').text(JSON.stringify(md, null, 2)).appendTo(content);
+
+    // Bind keys.
+    $(window).bind('keydown', function(event) {
+        var key = String.fromCharCode(event.which).toLowerCase();
+        if (key == '1' || key == '2' || key == '3' || key == '4') {
+            $(`#click${key}`).click();
+        }
+        // TODO: factor the rest of this:
+        if (key == 'a') {
+            go_to_id(id - 1);
+        }
+        if (key == 'd') {
+            go_to_id(id + 1);
+        }
+        if (key == 's') {
+            $.post('update', JSON.stringify({
+                 'id': md.n,
+                 'skip': 'during manual rotation',
              })).then(() => go_to_id(id + 1));
         }
     });

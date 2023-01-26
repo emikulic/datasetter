@@ -100,6 +100,7 @@ class Dataset:
             "w": o["w"],
             "h": o["h"],
             "sz": sz,
+            "rot": o.get("rot", 0),
         }
         key = json.dumps(key, sort_keys=True)
         try:
@@ -116,7 +117,7 @@ class Dataset:
 
     def crop_preview(self, n, x, y, wh, sz):
         """
-        Returns JPEG image data for object n, cropped and scaled.
+        Returns JPEG image data for object n, cropped and scaled and rotated.
         This is for previews in the web UI and is not cached.
         """
         o = self._data[n].copy()
@@ -127,6 +128,21 @@ class Dataset:
         o["sz"] = sz
         # TODO: change this to verbose logging.
         print(f"crop_preview for {o}")
+        img = load_and_crop(o, sz)
+        s = io.BytesIO()
+        img.save(s, format="jpeg", quality=95)
+        return s.getvalue()
+
+    def rotate_preview(self, n, rot, sz):
+        """
+        Returns JPEG image data for object n, cropped and scaled and rotated.
+        This is for previews in the web UI and is not cached.
+        """
+        o = self._data[n].copy()
+        o["rot"] = rot
+        o["sz"] = sz
+        # TODO: change this to verbose logging.
+        print(f"rotate_preview for {o}")
         img = load_and_crop(o, sz)
         s = io.BytesIO()
         img.save(s, format="jpeg", quality=95)
@@ -167,12 +183,15 @@ def load_and_crop(o, sz):
     assert img.width == o["orig_w"]  # TODO: warn instead
     assert img.height == o["orig_h"]
     x, y, w, h = o["x"], o["y"], o["w"], o["h"]
-    assert x >= 0
-    assert y >= 0
-    assert w > 0
-    assert h > 0
-    assert sz > 0
-    assert sz <= 1024
+    assert x >= 0, x
+    assert y >= 0, y
+    assert w > 0, w
+    assert h > 0, h
+    assert sz > 0, sz
+    assert sz <= 1024, sz
+    rot = o.get("rot", 0)
+    assert rot in [0, 1, 2, 3], rot
     img = img.crop((x, y, x + w, y + h))
     img = img.resize((sz, sz), Image.Resampling.BICUBIC)
+    img = img.rotate(rot * 90)
     return img
