@@ -144,6 +144,8 @@ function crop() {
     $('<div style="clear:both">').appendTo(content);
     if (md.manual_crop) {
         $('<p class="warn">ALREADY MANUALLY CROPPED</p>').appendTo(content);
+    } else if (md.skip) {
+        $('<p class="warn">ALREADY SKIPPED</p>').appendTo(content);
     }
     $('<p>').appendTo(content);
     $('<div>')
