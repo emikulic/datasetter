@@ -203,6 +203,9 @@ function crop() {
             `Press or click 1/2/3 to choose a crop and move on to the next image.`)
         .appendTo(content);
     $('<div>')
+        .text(`Press W to mark the image as not skipped and move on.`)
+        .appendTo(content);
+    $('<div>')
         .text(`Press S to mark the image as skipped and move on.`)
         .appendTo(content);
     $('<div>')
@@ -226,6 +229,12 @@ function crop() {
             $.post('update', JSON.stringify({
                  'id': md.n,
                  'skip': 'during manual crop',
+             })).then(() => go_to_id(id + 1));
+        }
+        if (key == 'w') {
+            $.post('update', JSON.stringify({
+                 'id': md.n,
+                 'unskip': 1,
              })).then(() => go_to_id(id + 1));
         }
     });
@@ -276,6 +285,9 @@ function rotate() {
         .appendTo(content);
     // TODO: factor this:
     $('<div>')
+        .text(`Press W to mark the image as not skipped and move on.`)
+        .appendTo(content);
+    $('<div>')
         .text(`Press S to mark the image as skipped and move on.`)
         .appendTo(content);
     $('<div>')
@@ -300,6 +312,12 @@ function rotate() {
             $.post('update', JSON.stringify({
                  'id': md.n,
                  'skip': 'during manual rotation',
+             })).then(() => go_to_id(id + 1));
+        }
+        if (key == 'w') {
+            $.post('update', JSON.stringify({
+                 'id': md.n,
+                 'unskip': 1,
              })).then(() => go_to_id(id + 1));
         }
     });

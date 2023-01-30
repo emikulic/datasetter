@@ -81,6 +81,9 @@ async def update_receiver(request):
     if "skip" in received:
         obj["skip"] = received["skip"]
         obj["manual_ts"] = now()
+    if "unskip" in received and "skip" in obj:
+        del obj["skip"]
+        obj["manual_ts"] = now()
     if "manual_crop" in received:
         for k in ["manual_crop", "x", "y", "w", "h"]:
             obj[k] = int(received[k])
