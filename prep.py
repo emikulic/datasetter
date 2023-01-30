@@ -37,7 +37,7 @@ def main():
             caption = o["caption"]
 
         with open(f"{args.outdir}/txt/{ofn}.txt", "w") as f:
-            f.write(caption)
+            f.write(caption.strip() + '\n')
 
 
 if __name__ == "__main__":
