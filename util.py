@@ -93,7 +93,7 @@ class Dataset:
 
     def cropped_jpg(self, n, sz):
         """
-        Returns JPEG image data for object n, cropped and scaled.
+        Returns JPEG image data for object n, cropped and scaled and rotated.
         Populates the cache.
         """
         o = self._data[n]
@@ -181,7 +181,7 @@ def load_image(fn):
 
 def load_and_crop(o, sz):
     """
-    Load the image from the given metadata (o), crop, and resize to sz.
+    Load the image from the given metadata (o), cropped and scaled and rotated.
     """
     img = load_image(o["fn"])
     assert img.width == o["orig_w"]  # TODO: warn instead
