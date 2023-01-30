@@ -10,6 +10,13 @@ $(document).ready(function() {
         $('#ds_name').text(text);
     }));
 
+    // Fill in mode links.
+    let s = new URLSearchParams(window.location.search);
+    for (let mode of ['catalog', 'caption', 'crop', 'rotate']) {
+        s.set('mode', mode);
+        $(`#mode_${mode}`).attr('href', '?' + s.toString());
+    }
+
     // Load data.
     fetch('data.json').then((response) => response.json().then((json) => {
         data = json;
