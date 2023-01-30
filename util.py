@@ -86,6 +86,9 @@ class Dataset:
             self.add(obj)
             return
         self._memadd(obj)
+        self.compact()
+
+    def compact(self):
         with open(self._fn, "w") as f:
             for obj in self._data.values():
                 json.dump(obj, f)
