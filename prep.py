@@ -2,11 +2,9 @@
 """
 Generate a dataset directory.
 """
-from PIL import Image
 from util import Dataset
 import argparse
 import os
-import util
 
 
 def main():
@@ -19,25 +17,39 @@ def main():
     os.makedirs(f"{args.outdir}/img", exist_ok=True)
     os.makedirs(f"{args.outdir}/txt", exist_ok=True)
 
-    # Collect all inputs.
-    objs = []
-    for i in args.inputs:
-        ds = Dataset(i)
-        objs.extend(ds._data.values())
+    # Load datasets.
+    datasets = [Dataset(i) for i in args.inputs]
+    dsn = len(datasets)
+    print(f"loaded {dsn} datasets")
 
     # Process all inputs.
-    for o in objs:
-        assert os.path.getsize(o["fn"]) == o["fsz"]
-        img = util.load_and_crop(o, args.size)
-        ofn = f"{o['md5']}-{o['n']}"
-        img.save(f"{args.outdir}/img/{ofn}.jpg", quality=95)
+    for dsi, ds in enumerate(datasets):
+        on = len(ds._data)
+        for oi, o in enumerate(ds._data.values()):
+            # assert os.path.getsize(o["fn"]) == o["fsz"]
+            if "skip" in o:
+                print(f'skip {o["fn"]} because {o["skip"]!r}')
+                continue
 
-        caption = ""
-        if "caption" in o:
-            caption = o["caption"]
+            # Use either manual or automatic caption.
+            caption = ""
+            if "caption" in o:
+                caption = o["caption"]
+            elif "autocaption" in o:
+                caption = o["autocaption"]
+            else:
+                print(f'skip {o["fn"]} missing caption')
+                continue
 
-        with open(f"{args.outdir}/txt/{ofn}.txt", "w") as f:
-            f.write(caption.strip() + '\n')
+            # Write img/ and txt/.
+            img = ds.cropped_jpg(o["n"], args.size)
+            ofn = f"{o['md5']}-{o['n']}"
+            with open(f"{args.outdir}/img/{ofn}.jpg", "wb") as f:
+                f.write(img)
+            with open(f"{args.outdir}/txt/{ofn}.txt", "w") as f:
+                f.write(caption.strip() + "\n")
+
+            print(f'{dsi+1}/{dsn} {oi+1}/{on} {o["fn"]} {caption!r}')
 
 
 if __name__ == "__main__":
