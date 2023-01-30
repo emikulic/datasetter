@@ -50,6 +50,18 @@ function go_to_mode(mode) {
     window.location.search = '?' + s.toString();
 }
 
+function append_warns(md, content) {
+    if (md.manual_crop) {
+        $('<p class="warn">ALREADY MANUALLY CROPPED</p>').appendTo(content);
+    }
+    if (md.skip) {
+        $('<p class="warn">ALREADY SKIPPED</p>').appendTo(content);
+    }
+    if (md.manual_rot) {
+        $('<p class="warn">ALREADY MANUALLY ROTATED</p>').appendTo(content);
+    }
+}
+
 function catalog() {
     const sz = 256;  // Preview size.
     let content = $('#content').html('Catalog:<br>');
@@ -105,9 +117,7 @@ function caption() {
                 .then(() => go_to_id(id + 1));
         }
     });
-    if (md.skip) {
-        $('<p class="warn">ALREADY SKIPPED</p>').appendTo(content);
-    }
+    append_warns(md, content);
     $('<div>')
         .text(
             `Press PageUp or PageDown to move to the prev/next image without saving.`)
@@ -186,11 +196,7 @@ function crop() {
     }
 
     $('<div style="clear:both">').appendTo(content);
-    if (md.manual_crop) {
-        $('<p class="warn">ALREADY MANUALLY CROPPED</p>').appendTo(content);
-    } else if (md.skip) {
-        $('<p class="warn">ALREADY SKIPPED</p>').appendTo(content);
-    }
+    append_warns(md, content);
     $('<p>').appendTo(content);
     $('<div>')
         .text(
@@ -262,9 +268,7 @@ function rotate() {
     make_preview('4', 2).appendTo(content);
 
     $('<div style="clear:both">').appendTo(content);
-    if (md.manual_rot) {
-        $('<p class="warn">ALREADY MANUALLY ROTATED</p>').appendTo(content);
-    }
+    append_warns(md, content);
     $('<p>').appendTo(content);
     $('<div>')
         .text(
