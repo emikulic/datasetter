@@ -30,6 +30,30 @@ $(document).ready(function() {
     fetch('data.json').then((response) => response.json().then((json) => {
         data = json;
         $('#ds_size').text(Object.keys(data).length);
+
+        let num_caption = 0;
+        let num_crop = 0;
+        let num_rotate = 0;
+        let num_skip = 0;
+        for (const [n, md] of Object.entries(data)) {
+            if ('caption' in md) {
+                num_caption++;
+            }
+            if ('manual_crop' in md) {
+                num_crop++;
+            }
+            if ('manual_rot' in md) {
+                num_rotate++;
+            }
+            if ('skip' in md) {
+                num_skip++;
+            }
+        }
+        $('#num_caption').text(num_caption);
+        $('#num_crop').text(num_crop);
+        $('#num_rotate').text(num_rotate);
+        $('#num_skip').text(num_skip);
+
         const mode = new URLSearchParams(window.location.search).get('mode');
         if (mode == 'catalog') {
             catalog();
