@@ -156,14 +156,20 @@ class Dataset:
         return s.getvalue()
 
 
+_load_cache = [("", None)]  # (fn, Image)
+
+
 def load_image(fn):
     """
     Load an image, apply EXIF rotation, convert to RGB.
     """
+    if _load_cache[0][0] == fn:
+        return _load_cache[0][1]
     img = Image.open(fn)
-    if img.mode != 'RGB':
-        img = img.convert('RGB')
+    if img.mode != "RGB":
+        img = img.convert("RGB")
     img = ImageOps.exif_transpose(img)
+    _load_cache[0] = (fn, img)
     return img
 
 
