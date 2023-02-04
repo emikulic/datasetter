@@ -1,8 +1,17 @@
 'use strict;'
 
-// Main.
+// Get ID from URL.
+const curr_id = (() => {
+    let s = new URLSearchParams(window.location.search);
+    let i = s.get('id');
+    if (!i) return 0;
+    return parseInt(i);
+})();
+
 const SZ = 512;
 var data = null;  // Global for debugging.
+
+// Main.
 $(document).ready(function() {
     // Show dataset name.
     fetch('title.txt').then((response) => response.text().then((text) => {
@@ -36,13 +45,6 @@ $(document).ready(function() {
 
 // ---
 
-function get_id_from_url() {
-    let s = new URLSearchParams(window.location.search);
-    let id = s.get('id');
-    if (!id) return 0;
-    return parseInt(id);
-}
-
 function go_to_id(id) {
     if (id < 0) return;
     if (id >= Object.keys(data).length) return;
@@ -72,7 +74,6 @@ function append_warns(md, content) {
 function catalog() {
     const sz = 256;  // Preview size.
     let content = $('#content').html('Catalog:<br>');
-    const id = get_id_from_url();
     for (const [n, md] of Object.entries(data)) {
         let a = $('<a>').attr('href', `?mode=caption&id=${n}`);
         // Trade-off: load full size thumbnails to hit the cache, but then scale
@@ -90,7 +91,7 @@ function catalog() {
             // Fade skipped images.
             img.css('opacity', 0.3);
         }
-        if (n == id) {
+        if (n == curr_id) {
             // Highlight selected image.
             img.css('border', '2px solid red');
             img.css('margin', '3px');
@@ -101,14 +102,14 @@ function catalog() {
 }
 
 function caption() {
-    const id = get_id_from_url();
-    const md = data[id];
+    const md = data[curr_id];
     let content = $('#content').html('');
     $('<div>')
-        .text(`Caption: ${id + 1} / ${Object.keys(data).length} (n = ${md.n})`)
+        .text(`Caption: ${curr_id + 1} / ${Object.keys(data).length} (n = ${
+            md.n})`)
         .appendTo(content);
     $('#mode_caption').attr('class', 'mode_select');
-    $('<img />', {class: 'thumbnail', src: `thumbnail/${id}/${SZ}`})
+    $('<img />', {class: 'thumbnail', src: `thumbnail/${curr_id}/${SZ}`})
         .width(SZ)
         .height(SZ)
         .appendTo(content);
@@ -120,8 +121,10 @@ function caption() {
     txt.keypress(function(ev) {
         if (ev.which == 13) {
             ev.preventDefault();
-            $.post('update', JSON.stringify({'id': id, 'caption': txt.val()}))
-                .then(() => go_to_id(id + 1));
+            $.post('update', JSON.stringify({
+                 'id': curr_id,
+                 'caption': txt.val()
+             })).then(() => go_to_id(curr_id + 1));
         }
     });
     append_warns(md, content);
@@ -134,17 +137,17 @@ function caption() {
     // Bind keys.
     $(window).bind('keydown', function(event) {
         if (event.which == 33) {  // PageUp
-            go_to_id(id - 1);
+            go_to_id(curr_id - 1);
         } else if (event.which == 34) {  // PageDown
-            go_to_id(id + 1);
+            go_to_id(curr_id + 1);
         }
         var key = String.fromCharCode(event.which).toLowerCase();
         if (key == 's' && (event.ctrlKey || event.metaKey)) {
             event.preventDefault();
             $.post('update', JSON.stringify({
-                 'id': id,
+                 'id': curr_id,
                  'skip': 'during captioning'
-             })).then(() => go_to_id(id + 1));
+             })).then(() => go_to_id(curr_id + 1));
         }
     });
 }
@@ -152,11 +155,11 @@ function caption() {
 function crop() {
     const sz = 256;  // Preview size.
     $('#mode_crop').attr('class', 'mode_select');
-    const id = get_id_from_url();
-    const md = data[id];
+    const md = data[curr_id];
     let content = $('#content').html('');
     $('<div>')
-        .text(`Crop: ${id + 1} / ${Object.keys(data).length} (n = ${md.n}) |
+        .text(
+            `Crop: ${curr_id + 1} / ${Object.keys(data).length} (n = ${md.n}) |
     original size ${md.orig_w} x ${md.orig_h}`)
         .appendTo(content);
 
@@ -165,7 +168,7 @@ function crop() {
         let img = $('<img />', {
                       class: 'thumbnail',
                       style: 'cursor:pointer',
-                      src: `crop/${id}/${x}/${y}/${wh}/${sz}`
+                      src: `crop/${curr_id}/${x}/${y}/${wh}/${sz}`
                   })
                       .width(sz)
                       .height(sz)
@@ -180,7 +183,7 @@ function crop() {
                              'y': y,
                              'w': wh,
                              'h': wh,
-                         })).then(() => go_to_id(id + 1)));
+                         })).then(() => go_to_id(curr_id + 1)));
         return out;
     }
 
@@ -224,10 +227,10 @@ function crop() {
     $(window).bind('keydown', function(event) {
         var key = String.fromCharCode(event.which).toLowerCase();
         if (key == 'a') {
-            go_to_id(id - 1);
+            go_to_id(curr_id - 1);
         }
         if (key == 'd') {
-            go_to_id(id + 1);
+            go_to_id(curr_id + 1);
         }
         if (key == '1' || key == '2' || key == '3') {
             $(`#click${key}`).click();
@@ -236,13 +239,13 @@ function crop() {
             $.post('update', JSON.stringify({
                  'id': md.n,
                  'skip': 'during manual crop',
-             })).then(() => go_to_id(id + 1));
+             })).then(() => go_to_id(curr_id + 1));
         }
         if (key == 'w') {
             $.post('update', JSON.stringify({
                  'id': md.n,
                  'unskip': 1,
-             })).then(() => go_to_id(id + 1));
+             })).then(() => go_to_id(curr_id + 1));
         }
     });
 }
@@ -250,11 +253,11 @@ function crop() {
 function rotate() {
     const sz = 256;  // Preview size.
     $('#mode_rotate').attr('class', 'mode_select');
-    const id = get_id_from_url();
-    const md = data[id];
+    const md = data[curr_id];
     let content = $('#content').html('');
     $('<div>')
-        .text(`Rotate: ${id + 1} / ${Object.keys(data).length} (n = ${md.n})`)
+        .text(`Rotate: ${curr_id + 1} / ${Object.keys(data).length} (n = ${
+            md.n})`)
         .appendTo(content);
 
     function make_preview(key, rot) {
@@ -264,7 +267,7 @@ function rotate() {
                       width: sz,
                       height: sz,
                       style: 'cursor:pointer',
-                      src: `rotate/${id}/${rot}/${sz}`
+                      src: `rotate/${curr_id}/${rot}/${sz}`
                   })
                       .attr('id', `click${key}`)
                       .appendTo(out);
@@ -274,7 +277,7 @@ function rotate() {
                              'id': md.n,
                              'manual_rot': 1,
                              'rot': rot,
-                         })).then(() => go_to_id(id + 1)));
+                         })).then(() => go_to_id(curr_id + 1)));
         return out;
     }
 
@@ -310,22 +313,22 @@ function rotate() {
         }
         // TODO: factor the rest of this:
         if (key == 'a') {
-            go_to_id(id - 1);
+            go_to_id(curr_id - 1);
         }
         if (key == 'd') {
-            go_to_id(id + 1);
+            go_to_id(curr_id + 1);
         }
         if (key == 's') {
             $.post('update', JSON.stringify({
                  'id': md.n,
                  'skip': 'during manual rotation',
-             })).then(() => go_to_id(id + 1));
+             })).then(() => go_to_id(curr_id + 1));
         }
         if (key == 'w') {
             $.post('update', JSON.stringify({
                  'id': md.n,
                  'unskip': 1,
-             })).then(() => go_to_id(id + 1));
+             })).then(() => go_to_id(curr_id + 1));
         }
     });
 }
