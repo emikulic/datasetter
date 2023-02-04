@@ -156,30 +156,15 @@ class Dataset:
         return s.getvalue()
 
 
-def rgbify(i):
-    """
-    Convert grayscale to RGB by duplicating into 3 channels.
-    This is a no-op on images that already have 3 channels.
-    If the image has an alpha channel, it's stripped.
-    """
-    i = np.atleast_3d(i)
-    h, w, c = i.shape
-    if c == 3:
-        return Image.fromarray(i)
-    if c == 4:
-        return Image.fromarray(i[:, :, :3])
-    out = np.zeros((h, w, 3), dtype=i.dtype)
-    out[:, :, :] = i[:, :]
-    return Image.fromarray(out)
-
-
 def load_image(fn):
     """
     Load an image, apply EXIF rotation, convert to RGB.
     """
     img = Image.open(fn)
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
     img = ImageOps.exif_transpose(img)
-    return rgbify(img)
+    return img
 
 
 def load_and_crop(o, sz):
