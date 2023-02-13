@@ -17,6 +17,11 @@ SZ = 512
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--prefix", default="", help="Optional prefix.")
+    p.add_argument(
+        "--override",
+        help="Regenerate existing autocaptions.",
+        action="store_true",
+    )
     p.add_argument("dsfile", help="JSON dataset file to add to.")
     args = p.parse_args()
 
@@ -35,9 +40,10 @@ def main():
     print("done loading")
 
     for n, md in ds._data.items():
-        if "autocaption" in md:
-            print("skipping", md)
-            continue
+        if not args.override:
+            if "autocaption" in md:
+                print("skipping", md)
+                continue
         jpg = ds.cropped_jpg(n, SZ)
         im = Image.open(io.BytesIO(jpg))
 
