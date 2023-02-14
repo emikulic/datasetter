@@ -152,6 +152,12 @@ function caption() {
         }
     });
     append_warns(md, content);
+    if ('caption' in md) {
+        txt.val(md['caption']);
+    } else if ('autocaption' in md) {
+        txt.val(md['autocaption']);
+        $('<p class="warn">USING AUTOCAPTION</p>').appendTo(content);
+    }
     $('<div>')
         .text(
             `Press PageUp or PageDown to move to the prev/next image without saving.`)
