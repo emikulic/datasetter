@@ -40,6 +40,7 @@ class Dataset:
     def __init__(self, fn):
         self._data = {}  # Map from N to metadata object.
         self._fn = fn
+        self._dir = os.path.dirname(os.path.abspath(fn))
         self._fns = set()  # Set of original filenames.
         if os.path.exists(fn):
             self._load(fn)
@@ -115,7 +116,7 @@ class Dataset:
         except KeyError:
             # TODO: change this to verbose logging.
             print(f"cropped_jpg cache miss for {key}")
-            img = load_and_crop(o, sz)
+            img = load_and_crop(o, sz, dsdir=self._dir)
             s = io.BytesIO()
             img.save(s, format="jpeg", quality=95)
             img = s.getvalue()
@@ -135,7 +136,7 @@ class Dataset:
         o["sz"] = sz
         # TODO: change this to verbose logging.
         print(f"crop_preview for {o}")
-        img = load_and_crop(o, sz)
+        img = load_and_crop(o, sz, dsdir=self._dir)
         s = io.BytesIO()
         img.save(s, format="jpeg", quality=95)
         return s.getvalue()
@@ -150,7 +151,7 @@ class Dataset:
         o["sz"] = sz
         # TODO: change this to verbose logging.
         print(f"rotate_preview for {o}")
-        img = load_and_crop(o, sz)
+        img = load_and_crop(o, sz, dsdir=self._dir)
         s = io.BytesIO()
         img.save(s, format="jpeg", quality=95)
         return s.getvalue()
@@ -159,13 +160,13 @@ class Dataset:
 _load_cache = [("", None)]  # (fn, Image)
 
 
-def load_image(fn):
+def load_image(fn, dsdir="."):
     """
     Load an image, apply EXIF rotation, convert to RGB.
     """
     if _load_cache[0][0] == fn:
         return _load_cache[0][1]
-    img = Image.open(fn)
+    img = Image.open(f"{dsdir}/{fn}")
     if img.mode != "RGB":
         img = img.convert("RGB")
     img = ImageOps.exif_transpose(img)
@@ -173,11 +174,11 @@ def load_image(fn):
     return img
 
 
-def load_and_crop(o, sz):
+def load_and_crop(o, sz, dsdir="."):
     """
     Load the image from the given metadata (o), cropped and scaled and rotated.
     """
-    img = load_image(o["fn"])
+    img = load_image(o["fn"], dsdir)
     assert img.width == o["orig_w"]  # TODO: warn instead
     assert img.height == o["orig_h"]
     x, y, w, h = o["x"], o["y"], o["w"], o["h"]
