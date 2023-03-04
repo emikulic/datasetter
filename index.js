@@ -114,6 +114,8 @@ function catalog() {
         if (md.skip) {
             // Fade skipped images.
             img.css('opacity', 0.3);
+            img.css('border', '2px solid #0ff');
+            img.css('margin', '3px');
         }
         if (n == curr_id) {
             // Highlight selected image.
