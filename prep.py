@@ -72,9 +72,13 @@ def main():
 
             # Write img/ and txt/.
             img = ds.cropped_jpg(o["n"], args.size)
+            mask = ds.cropped_mask(o["n"], args.size)
             ofn = f"{o['md5']}-{o['n']}"
             with open(f"{args.outdir}/img/{ofn}.jpg", "wb") as f:
                 f.write(img)
+            if mask is not None:
+                with open(f"{args.outdir}/img/{ofn}.mask.png", "wb") as f:
+                    f.write(mask)
             with open(f"{args.outdir}/txt/{ofn}.txt", "w") as f:
                 f.write(caption.strip() + "\n")
 

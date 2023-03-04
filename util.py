@@ -123,6 +123,41 @@ class Dataset:
             self._cache[key] = img
             return img
 
+    def cropped_mask(self, n, sz):
+        """
+        Returns PNG image data for the mask for object n, cropped and scaled
+        and rotated. Populates the cache. If no mask is applicable, returns
+        None.
+        """
+        o = self._data[n]
+        key = {
+            "md5": o["md5"],
+            "x": o["x"],
+            "y": o["y"],
+            "w": o["w"],
+            "h": o["h"],
+            "sz": sz,
+            "rot": o.get("rot", 0),
+            "mask": 1,
+        }
+        key = json.dumps(key, sort_keys=True)
+        try:
+            return self._cache[key]
+        except KeyError:
+            # TODO: change this to verbose logging.
+            name, ext = os.path.splitext(o["fn"])
+            o = o.copy()
+            o["fn"] = f"{name}.mask.png"
+            if not os.path.exists(f'{self._dir}/{o["fn"]}'):
+                return None
+            print(f"cropped_mask cache miss for {o['fn']}, {key}")
+            img = load_and_crop(o, sz, dsdir=self._dir)
+            s = io.BytesIO()
+            img.save(s, format="png")
+            img = s.getvalue()
+            self._cache[key] = img
+            return img
+
     def crop_preview(self, n, x, y, wh, sz):
         """
         Returns JPEG image data for object n, cropped and scaled and rotated.
