@@ -26,8 +26,7 @@ def main():
     )
     args = p.parse_args()
 
-    os.makedirs(f"{args.outdir}/img", exist_ok=True)
-    os.makedirs(f"{args.outdir}/txt", exist_ok=True)
+    os.makedirs(f"{args.outdir}", exist_ok=True)
 
     # Load datasets.
     datasets = [Dataset(i) for i in args.inputs]
@@ -70,19 +69,21 @@ def main():
             if args.limit > 0 and count > args.limit:
                 return
 
-            # Write img/ and txt/.
+            # Write out.
             img = ds.cropped_jpg(o["n"], args.size)
-            mask = ds.cropped_mask(o["n"], args.size)
-            ofn = f"{o['md5']}-{o['n']}"
-            with open(f"{args.outdir}/img/{ofn}.jpg", "wb") as f:
+            mask = None
+            if o.get('mask_state') == 'done':
+                mask = ds.cropped_mask(o["n"], args.size)
+            ofn = f"{count:06d}_{o['md5']}"
+            with open(f"{args.outdir}/{ofn}.jpg", "wb") as f:
                 f.write(img)
             if mask is not None:
-                with open(f"{args.outdir}/img/{ofn}.mask.png", "wb") as f:
+                with open(f"{args.outdir}/{ofn}.mask.png", "wb") as f:
                     f.write(mask)
-            with open(f"{args.outdir}/txt/{ofn}.txt", "w") as f:
+            with open(f"{args.outdir}/{ofn}.txt", "w") as f:
                 f.write(caption.strip() + "\n")
 
-            print(f'{dsi+1}/{dsn} {oi+1}/{on} {o["fn"]} {caption!r}')
+            print(f'ds {dsi+1}/{dsn} n {oi+1}/{on} fn {o["fn"]!r} {caption!r}')
 
 
 if __name__ == "__main__":
