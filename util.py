@@ -152,6 +152,8 @@ class Dataset:
                 return None
             print(f"cropped_mask cache miss for {o['fn']}, {key}")
             img = load_and_crop(o, sz, dsdir=self._dir)
+            if np.all(np.asarray(img) == [255, 255, 255]):
+                return None  # Nothing is masked out.
             s = io.BytesIO()
             img.save(s, format="png")
             img = s.getvalue()
