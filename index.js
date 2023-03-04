@@ -135,10 +135,23 @@ function caption() {
             md.n})`)
         .appendTo(content);
     $('#mode_caption').attr('class', 'mode_select');
-    $('<img />', {class: 'thumbnail', src: `thumbnail/${curr_id}/${SZ}`})
+    $('<img>', {class: 'thumbnail', src: `thumbnail/${curr_id}/${SZ}`})
         .width(SZ)
         .height(SZ)
         .appendTo(content);
+    let has_mask = false;
+    if ('mask_state' in md && md['mask_state'] == 'done') {
+        has_mask = true;
+    }
+    if (has_mask) {
+        let mask_img =
+            $('<img>',
+              {class: 'thumbnail', src: `mask_thumbnail/${curr_id}/${SZ}`})
+                .width(SZ)
+                .height(SZ)
+                .appendTo(content);
+        mask_img.css('margin-left', '5px');
+    }
     $('<br>').appendTo(content);
     let txt =
         $('<textarea placeholder="enter caption, hit enter to save\nhit ctrl-s to mark as skipped"></textarea>')
@@ -157,6 +170,12 @@ function caption() {
     let prep_mask =
         $('<button type="button">Prepare mask</button>').appendTo(content);
     if ('mask_fn' in md) {
+        if (has_mask) {
+            prep_mask.text('(mask is already present)');
+        } else {
+            prep_mask.text(
+                '(mask is being prepared, run apply_masks.py when done)');
+        }
         prep_mask.prop('disabled', true);
     }
     prep_mask.click(function(ev) {

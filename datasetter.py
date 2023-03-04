@@ -122,6 +122,16 @@ async def thumbnail_receiver(request):
     return web.Response(body=img, content_type="image/jpeg")
 
 
+@routes.get("/mask_thumbnail/{n}/{sz}")
+async def mask_thumbnail_receiver(request):
+    n = int(request.match_info.get("n", ""))
+    sz = int(request.match_info.get("sz", ""))
+    assert sz <= 1024
+    img = request.config_dict["ds"].cropped_mask(n, sz)
+    assert len(img) > 0
+    return web.Response(body=img, content_type="image/png")
+
+
 @routes.get("/crop/{n}/{x}/{y}/{wh}/{sz}")
 async def crop_receiver(request):
     n = int(request.match_info.get("n", ""))
