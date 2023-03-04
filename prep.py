@@ -13,6 +13,7 @@ def main():
     p.add_argument("inputs", nargs="+", help="One or more dataset JSON files.")
     p.add_argument("--size", type=int, default=512, help="Default output image size.")
     p.add_argument("--limit", type=int, default=0, help="Stop after this many inputs.")
+    p.add_argument("--caption", type=str, default="", help="If set, rewrite caption.")
     p.add_argument(
         "--need_crop",
         help="If set, skip any input that isn't manually cropped.",
@@ -49,13 +50,18 @@ def main():
                 print(f'skip {o["fn"]} because no caption')
                 continue
 
-            # Use either manual or automatic caption.
-            caption = ""
-            if "caption" in o:
-                caption = o["caption"]
-            elif "autocaption" in o:
-                caption = o["autocaption"]
+            # Manual vs automatic vs override caption.
+            caption = o.get("caption", "")
+            autocaption = o.get("autocaption", "")
+            if args.caption:
+                caption = args.caption.replace("AUTOCAPTION", autocaption).replace(
+                    "CAPTION", caption
+                )
             else:
+                if caption == "":
+                    caption = autocaption
+
+            if caption == "":
                 print(f'skip {o["fn"]} missing caption and autocaption')
                 continue
 
