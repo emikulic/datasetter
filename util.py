@@ -178,6 +178,25 @@ class Dataset:
             self._cache[key] = img
             return img
 
+    def masked_thumbnail(self, n, sz):
+        """
+        Like cropped_jpg but draws the mask on if present.
+        """
+        o = self._data[n]
+        img = self.cropped_jpg(n, sz)
+        if o.get("mask_state", "") != "done":
+            return img
+        mask = self.cropped_mask(n, sz)
+        img = Image.open(io.BytesIO(img))
+        mask = Image.open(io.BytesIO(mask))
+        img = np.asarray(img).copy()
+        mask = np.asarray(mask)
+        cond = np.all(mask != [255, 255, 255], axis=2)
+        img[cond] = [255, 0, 255]
+        s = io.BytesIO()
+        Image.fromarray(img).save(s, format="jpeg", quality=95)
+        return s.getvalue()
+
     def crop_preview(self, n, x, y, wh, sz):
         """
         Returns JPEG image data for object n, cropped and scaled and rotated.

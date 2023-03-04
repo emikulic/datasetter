@@ -102,11 +102,11 @@ function catalog() {
         let a = $('<a>').attr('href', `?mode=caption&id=${n}`);
         // Trade-off: load full size thumbnails to hit the cache, but then scale
         // them down in the browser.
-        let img = $('<img />', {
+        let img = $('<img>', {
                       style: 'float:left; margin:5px;',
                       loading: 'lazy',
                       class: 'thumbnail',
-                      src: `thumbnail/${n}/${SZ}`
+                      src: `masked_thumbnail/${n}/${SZ}`
                   })
                       .width(sz)
                       .height(sz)
