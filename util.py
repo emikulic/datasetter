@@ -40,7 +40,10 @@ class Dataset:
     def __init__(self, fn):
         self._data = {}  # Map from N to metadata object.
         self._fn = fn
+        # Full path to fn's parent dir.
         self._dir = os.path.dirname(os.path.abspath(fn))
+        # Relative (to _dir) path to the mask dir.
+        self._maskdir = os.path.basename(os.path.abspath(fn)) + ".masks"
         self._fns = set()  # Set of original filenames.
         if os.path.exists(fn):
             self._load(fn)
@@ -94,6 +97,27 @@ class Dataset:
             for obj in self._data.values():
                 json.dump(obj, f)
                 f.write("\n")
+
+    def prep_mask(self, n, append):
+        """
+        Creates {fn}.masks/{n}_{md5}.prep.mask.png
+        """
+        obj = self._data[n]
+        assert "mask_fn" not in obj
+        os.makedirs(f"{self._dir}/{self._maskdir}", exist_ok=True)
+        maskfn = f'{self._maskdir}/{obj["n"]}_{obj["md5"]}.prep.mask.png'
+        img = load_image(obj["fn"], dsdir=self._dir)
+        img = np.asarray(img).copy()  # copy to make it not readonly
+        rgb = np.asarray([255, 0, 255])
+        precision = 255 - (1 + 2 + 4 + 8)  # bitmask
+        # Darken full purple if it's present in the image.
+        cond = (img & precision) == (rgb & precision)
+        cond = cond.all(axis=2)
+        img[cond] = [200, 0, 200]
+        Image.fromarray(img).save(f"{self._dir}/{maskfn}")
+        obj["mask_fn"] = maskfn
+        obj["mask_state"] = "prep"
+        self.update(obj, append)
 
     def cropped_jpg(self, n, sz):
         """

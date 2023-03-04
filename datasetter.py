@@ -97,8 +97,20 @@ async def update_receiver(request):
     return web.Response(status=204)
 
 
+@routes.post("/prep_mask")
+async def prep_mask_receiver(request):
+    received = await request.json()
+    try:
+        id = int(received["id"])
+    except (KeyError, ValueError):
+        return json_error('"id" must be int')
+    append = request.config_dict["args"].append
+    request.config_dict["ds"].prep_mask(id, append)
+    return web.Response(status=204)
+
+
 def json_error(reason):
-    return web.json_response({"status": "error", "reason": reason})
+    return web.json_response({"status": "error", "reason": reason}, status=400)
 
 
 @routes.get("/thumbnail/{n}/{sz}")

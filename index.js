@@ -139,7 +139,7 @@ function caption() {
         .width(SZ)
         .height(SZ)
         .appendTo(content);
-    $('<br/>').appendTo(content);
+    $('<br>').appendTo(content);
     let txt =
         $('<textarea placeholder="enter caption, hit enter to save\nhit ctrl-s to mark as skipped"></textarea>')
             .appendTo(content);
@@ -152,6 +152,17 @@ function caption() {
                  'caption': txt.val()
              })).then(() => go_to_id(curr_id + 1));
         }
+    });
+    $('<br>').appendTo(content);
+    let prep_mask =
+        $('<button type="button">Prepare mask</button>').appendTo(content);
+    if ('mask_fn' in md) {
+        prep_mask.prop('disabled', true);
+    }
+    prep_mask.click(function(ev) {
+        $.post('prep_mask', JSON.stringify({
+             'id': curr_id
+         })).then(() => prep_mask.prop('disabled', true));
     });
     append_warns(md, content);
     if ('caption' in md) {
