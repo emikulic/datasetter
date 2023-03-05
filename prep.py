@@ -5,6 +5,20 @@ Generate a dataset directory.
 from util import Dataset
 import argparse
 import os
+import numpy as np
+import io
+from PIL import Image
+
+
+def make_empty_mask(sz):
+    """
+    Returns a PNG mask that doesn't mask anything out.
+    """
+    mask = np.zeros((sz, sz), dtype=np.uint8)
+    mask += 255
+    s = io.BytesIO()
+    Image.fromarray(mask).save(s, format="png")
+    return s.getvalue()
 
 
 def main():
@@ -27,6 +41,7 @@ def main():
     args = p.parse_args()
 
     os.makedirs(f"{args.outdir}", exist_ok=True)
+    no_mask = make_empty_mask(args.size)
 
     # Load datasets.
     datasets = [Dataset(i) for i in args.inputs]
@@ -72,14 +87,15 @@ def main():
             # Write out.
             img = ds.cropped_jpg(o["n"], args.size)
             mask = None
-            if o.get('mask_state') == 'done':
+            if o.get("mask_state") == "done":
                 mask = ds.cropped_mask(o["n"], args.size)
+            if mask is None:
+                mask = no_mask
             ofn = f"{count:06d}_{o['md5']}"
             with open(f"{args.outdir}/{ofn}.jpg", "wb") as f:
                 f.write(img)
-            if mask is not None:
-                with open(f"{args.outdir}/{ofn}.mask.png", "wb") as f:
-                    f.write(mask)
+            with open(f"{args.outdir}/{ofn}.mask.png", "wb") as f:
+                f.write(mask)
             with open(f"{args.outdir}/{ofn}.txt", "w") as f:
                 f.write(caption.strip() + "\n")
 
