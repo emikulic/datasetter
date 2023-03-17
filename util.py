@@ -248,7 +248,7 @@ def load_image(fn, dsdir="."):
     return img
 
 
-def load_and_crop(o, sz, dsdir="."):
+def load_and_crop_wh(o, ow, oh, dsdir="."):
     """
     Load the image from the given metadata (o), cropped and scaled and rotated.
     """
@@ -260,11 +260,17 @@ def load_and_crop(o, sz, dsdir="."):
     assert y >= 0, y
     assert w > 0, w
     assert h > 0, h
-    assert sz > 0, sz
-    assert sz <= 1024, sz
+    assert ow > 0, ow
+    assert oh > 0, oh
+    assert ow <= 1024, ow
+    assert oh <= 1024, oh
     rot = o.get("rot", 0)
     assert rot in [0, 1, 2, 3], rot
     img = img.crop((x, y, x + w, y + h))
-    img = img.resize((sz, sz), Image.Resampling.BICUBIC)
+    img = img.resize((ow, oh), Image.Resampling.BICUBIC)
     img = img.rotate(rot * 90)
     return img
+
+
+def load_and_crop(o, sz, dsdir="."):
+    return load_and_crop_wh(o, sz, sz, dsdir)
