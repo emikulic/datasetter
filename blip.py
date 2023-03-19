@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 """
-Use BLIP to automatically add captions.
+Use BLIP to automatically generate captions, and CLIP to keep the best ones.
 """
-print("importing")
+import logging
+
+fmt = "%(asctime)s %(filename)s:%(lineno)d %(levelname)s %(message)s"
+logging.basicConfig(format=fmt, level=logging.DEBUG)
+logging.info("importing")
+import os
+
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 import argparse
 from util import Dataset
 from PIL import Image
 import io
 import torch
-from transformers import AutoProcessor, BlipForConditionalGeneration
+import transformers
 
 # Trade-off: use default size to get cache hits, BLIP will scale images down to 384px.
 SZ = 512
@@ -17,7 +24,9 @@ SZ = 512
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("inputs", nargs="+", help="One or more dataset JSON files.")
-    p.add_argument("--prefix", default="", help="Optional prefix.")
+    p.add_argument("--prefix", default="", help="Optional prefix for every caption.")
+    p.add_argument("--num_gen", default=100, help="How many captions to generate.")
+    p.add_argument("--num_keep", default=10, help="How many captions to keep.")
     p.add_argument(
         "--override",
         help="Regenerate existing autocaptions.",
@@ -25,39 +34,84 @@ def main():
     )
     args = p.parse_args()
 
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    logging.info(f"device is {device}")
+
     # Downloads 945MB to ~/.cache/huggingface/hub/models--Salesforce--blip-image...
-    print("loading processor")
-    processor = AutoProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-    print("loading model")
-    model = BlipForConditionalGeneration.from_pretrained(
+    logging.info("loading BLIP processor")
+    blip_processor = transformers.AutoProcessor.from_pretrained(
         "Salesforce/blip-image-captioning-base"
     )
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-    model.to(device)
-    print("done loading")
+    logging.info("loading BLIP model")
+    blip_model = transformers.BlipForConditionalGeneration.from_pretrained(
+        "Salesforce/blip-image-captioning-base"
+    ).to(device)
+
+    # Downloads 1.6GB to ~/.cache/huggingface/hub/models--openai--clip-vit-large-patch14
+    clip_version = "openai/clip-vit-large-patch14"  # This is what sd1.5 uses.
+    logging.info("loading CLIP processor")
+    clip_processor = transformers.CLIPImageProcessor()
+    logging.info("loading CLIP image model")
+    clip_image_model = transformers.CLIPVisionModelWithProjection.from_pretrained(
+        clip_version
+    ).to(device)
+    tokenizer = transformers.AutoTokenizer.from_pretrained(clip_version)
+    logging.info("loading CLIP text model")
+    clip_text_model = transformers.CLIPTextModelWithProjection.from_pretrained(
+        clip_version
+    ).to(device)
+    logging.info("done loading")
 
     for fn in args.inputs:
-        print(f"loading {fn}")
+        logging.info(f"loading dataset {fn}")
         ds = Dataset(fn)
 
         for n, md in ds._data.items():
             if not args.override:
                 if "autocaption" in md:
-                    print("skipping", md)
+                    logging.info(
+                        f"already has autocaption, skipping {md}, try --override"
+                    )
                     continue
             jpg = ds.cropped_jpg(n, SZ)
-            im = Image.open(io.BytesIO(jpg))
+            img = Image.open(io.BytesIO(jpg))
 
             with torch.no_grad():  # matters
-                inputs = processor(images=im, return_tensors="pt").to(device)
-                outputs = model.generate(
-                    **inputs, max_new_tokens=80
-                )  # , num_return_sequences=10, do_sample=True)
-                caption = processor.decode(outputs[0], skip_special_tokens=True)
+                # BLIP
+                inputs = blip_processor(img, args.prefix, return_tensors="pt").to(
+                    device
+                )
+                outputs = blip_model.generate(
+                    **inputs,
+                    max_new_tokens=80,
+                    num_return_sequences=args.num_gen,
+                    do_sample=True,
+                )
+                captions = blip_processor.batch_decode(
+                    outputs, skip_special_tokens=True
+                )  # List of strings.
 
-            md["autocaption"] = args.prefix + caption
-            ds.add(md)
-            print((n, md["fn"], md["autocaption"]))
+                # CLIP image.
+                pixel_values = clip_processor(img).pixel_values[0]
+                pixel_values = torch.tensor(pixel_values).to(device)
+                img_embed = clip_image_model(pixel_values.unsqueeze(0)).image_embeds[
+                    0
+                ]  # torch.Size([768])
+
+                # CLIP text.
+                inputs = tokenizer(
+                    captions, padding="max_length", truncation=True, return_tensors="pt"
+                ).to(device)
+                txt_embed = clip_text_model(**inputs).text_embeds
+
+                # Sort into order.
+                dist = torch.nn.functional.cosine_similarity(txt_embed, img_embed)
+                captions = sorted(zip(dist.tolist(), captions), reverse=True)
+
+            captions = captions[: args.num_keep]
+            captions = [[f"{k:.03}", v] for k, v in captions]
+            md["autocaption"] = captions
+            logging.info(f'{n} {md["fn"]} {captions[0]}')
 
         print("compacting")
         ds.compact()
