@@ -9,7 +9,8 @@ logging.basicConfig(format=fmt, level=logging.DEBUG)
 logging.info("importing")
 import os
 
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
+if 'TRANSFORMERS_OFFLINE' not in os.environ:
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
 import argparse
 from util import Dataset
 from PIL import Image
@@ -37,14 +38,21 @@ def main():
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     logging.info(f"device is {device}")
 
+    logging.info('***********************************************************')
+    logging.info('* To allow model downloads, use: env TRANSFORMERS_OFFLINE=0')
+    logging.info('***********************************************************')
+
     # Downloads 945MB to ~/.cache/huggingface/hub/models--Salesforce--blip-image...
+    blip_version = 'Salesforce/blip-image-captioning-base'
+    # Downloads 1.8G.
+    blip_version = 'Salesforce/blip-image-captioning-large'
     logging.info("loading BLIP processor")
     blip_processor = transformers.AutoProcessor.from_pretrained(
-        "Salesforce/blip-image-captioning-base"
+        blip_version
     )
     logging.info("loading BLIP model")
     blip_model = transformers.BlipForConditionalGeneration.from_pretrained(
-        "Salesforce/blip-image-captioning-base"
+        blip_version
     ).to(device)
 
     # Downloads 1.6GB to ~/.cache/huggingface/hub/models--openai--clip-vit-large-patch14
