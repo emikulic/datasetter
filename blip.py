@@ -25,7 +25,8 @@ SZ = 512
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("inputs", nargs="+", help="One or more dataset JSON files.")
-    p.add_argument("--prefix", default="", help="Optional prefix for every caption.")
+    p.add_argument("--blip_prefix", default="", help="Prefix to feed to BLIP. (optional)")
+    p.add_argument("--clip_prefix", default="", help="Prefix to add before CLIP. (optional)")
     p.add_argument("--num_gen", default=100, help="How many captions to generate.")
     p.add_argument("--num_keep", default=10, help="How many captions to keep.")
     p.add_argument(
@@ -86,7 +87,7 @@ def main():
 
             with torch.no_grad():  # matters
                 # BLIP
-                inputs = blip_processor(img, args.prefix, return_tensors="pt").to(
+                inputs = blip_processor(img, args.blip_prefix, return_tensors="pt").to(
                     device
                 )
                 outputs = blip_model.generate(
@@ -98,13 +99,21 @@ def main():
                 captions = blip_processor.batch_decode(
                     outputs, skip_special_tokens=True
                 )  # List of strings.
+                captions = [args.clip_prefix + i for i in captions]
+
+                if 'caption' in md:
+                    captions.append(md['caption'])
+                if "autocaption" in md:
+                    ac = md['autocaption']
+                    if type(ac) is str:
+                        ac = [ac]
+                    captions.extend(ac)
 
                 # CLIP image.
                 pixel_values = clip_processor(img).pixel_values[0]
                 pixel_values = torch.tensor(pixel_values).to(device)
-                img_embed = clip_image_model(pixel_values.unsqueeze(0)).image_embeds[
-                    0
-                ]  # torch.Size([768])
+                img_embed = clip_image_model(pixel_values.unsqueeze(0)).image_embeds[0]
+                # img_embed.shape is torch.Size([768])
 
                 # CLIP text.
                 inputs = tokenizer(
