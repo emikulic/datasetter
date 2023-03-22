@@ -187,7 +187,11 @@ function caption() {
     if ('caption' in md) {
         txt.val(md['caption']);
     } else if ('autocaption' in md) {
-        txt.val(md['autocaption']);
+        let ac = md['autocaption'];
+        if (typeof(ac) !== 'string') {
+            ac = ac[0][1];  // First string in autocaptions.
+        }
+        txt.val(ac);
         $('<p class="warn">USING AUTOCAPTION</p>').appendTo(content);
     }
     $('<div>')
