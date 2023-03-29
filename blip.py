@@ -31,8 +31,12 @@ def main():
     p.add_argument(
         "--clip_prefix", default="", help="Prefix to add before CLIP. (optional)"
     )
-    p.add_argument("--num_gen", default=100, help="How many captions to generate.")
-    p.add_argument("--num_keep", default=10, help="How many captions to keep.")
+    p.add_argument(
+        "--num_gen", type=int, default=100, help="How many captions to generate."
+    )
+    p.add_argument(
+        "--num_keep", type=int, default=10, help="How many captions to keep."
+    )
     p.add_argument(
         "--override",
         help="Regenerate existing autocaptions.",
@@ -77,6 +81,7 @@ def main():
         logging.info(f"loading dataset {fn}")
         ds = Dataset(fn)
 
+        ln = len(ds._data.items())
         for n, md in ds._data.items():
             if not args.override:
                 if "autocaption" in md:
@@ -131,7 +136,8 @@ def main():
             captions = captions[: args.num_keep]
             captions = [[f"{k:.03}", v] for k, v in captions]
             md["autocaption"] = captions
-            logging.info(f'{n} {md["fn"]} {captions[0]}')
+            ds.add(md)
+            logging.info(f'{n+1}/{ln} {md["fn"]} {captions[0]}')
 
         print("compacting")
         ds.compact()
