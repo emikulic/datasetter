@@ -77,6 +77,11 @@ def main():
             else:
                 if caption == "":
                     caption = autocaption
+                if type(caption) is list:
+                    caption = caption[0]
+                    assert len(caption) == 2, caption
+                    assert type(caption[1]) is str, caption
+                    caption = caption[1]
 
             if caption == "":
                 print(f'skip {o["fn"]} missing caption and autocaption')
