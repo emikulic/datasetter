@@ -178,6 +178,37 @@ class Dataset:
             self._cache[key] = img
             return img
 
+    def cropped_alpha(self, n, sz):
+        """
+        Returns PNG image data for the alpha channel for object n, cropped and scaled
+        and rotated. Returns None if no alpha channel. Populates the cache.
+        """
+        o = self._data[n].copy()
+        key = {
+            "md5": o["md5"],
+            "x": o["x"],
+            "y": o["y"],
+            "w": o["w"],
+            "h": o["h"],
+            "sz": sz,
+            "rot": o.get("rot", 0),
+            "alpha": 1,
+        }
+        key = json.dumps(key, sort_keys=True)
+        try:
+            return self._cache[key]
+        except KeyError:
+            # TODO: change this to verbose logging.
+            print(f"cropped_alpha cache miss for {o['fn']}, {key}")
+            img = load_and_crop(o, sz, dsdir=self._dir, alpha=True)
+            if img is None:
+                return img
+            s = io.BytesIO()
+            img.save(s, format="png")
+            img = s.getvalue()
+            self._cache[key] = img
+            return img
+
     def masked_thumbnail(self, n, sz):
         """
         Like cropped_jpg but draws the mask on if present.
@@ -234,25 +265,41 @@ class Dataset:
 _load_cache = [("", None)]  # (fn, Image)
 
 
-def load_image(fn, dsdir="."):
+def load_image(fn, dsdir=".", alpha=False):
     """
     Load an image, apply EXIF rotation, convert to RGB.
+    Returns the alpha channel if alpha=True and one is present, otherwise
+    returns None.
     """
     if _load_cache[0][0] == fn:
-        return _load_cache[0][1]
-    img = Image.open(f"{dsdir}/{fn}")
+        img = _load_cache[0][1]
+    else:
+        img = Image.open(f"{dsdir}/{fn}")
+        img = ImageOps.exif_transpose(img)
+        _load_cache[0] = (fn, img)
+    if alpha:
+        if img.mode != "RGBA":
+            return None
+        img = np.asarray(img).copy()
+        h, w, c = img.shape
+        assert c == 4
+        img[:, :, 0:3] = img[:, :, 3:]  # fill alpha into RGB
+        img = img[:, :, :3]  # drop alpha
+        img = Image.fromarray(img)
+        return img
     if img.mode != "RGB":
         img = img.convert("RGB")
-    img = ImageOps.exif_transpose(img)
-    _load_cache[0] = (fn, img)
     return img
 
 
-def load_and_crop_wh(o, ow, oh, dsdir="."):
+def load_and_crop_wh(o, ow, oh, dsdir=".", alpha=False):
     """
     Load the image from the given metadata (o), cropped and scaled and rotated.
     """
-    img = load_image(o["fn"], dsdir)
+    img = load_image(o["fn"], dsdir, alpha)
+    if alpha:
+        if img is None:
+            return img
     assert img.width == o["orig_w"]  # TODO: warn instead
     assert img.height == o["orig_h"]
     x, y, w, h = o["x"], o["y"], o["w"], o["h"]
@@ -272,5 +319,5 @@ def load_and_crop_wh(o, ow, oh, dsdir="."):
     return img
 
 
-def load_and_crop(o, sz, dsdir="."):
-    return load_and_crop_wh(o, sz, sz, dsdir)
+def load_and_crop(o, sz, dsdir=".", alpha=False):
+    return load_and_crop_wh(o, sz, sz, dsdir, alpha)

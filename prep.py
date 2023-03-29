@@ -86,9 +86,10 @@ def main():
 
             # Write out.
             img = ds.cropped_jpg(o["n"], args.size)
-            mask = None
             if o.get("mask_state") == "done":
                 mask = ds.cropped_mask(o["n"], args.size)
+            else:
+                mask = ds.cropped_alpha(o["n"], args.size)
             if mask is None:
                 mask = no_mask
             ofn = f"{count:06d}_{o['md5']}"
