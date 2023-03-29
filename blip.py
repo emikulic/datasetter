@@ -9,7 +9,7 @@ logging.basicConfig(format=fmt, level=logging.DEBUG)
 logging.info("importing")
 import os
 
-if 'TRANSFORMERS_OFFLINE' not in os.environ:
+if "TRANSFORMERS_OFFLINE" not in os.environ:
     os.environ["TRANSFORMERS_OFFLINE"] = "1"
 import argparse
 from util import Dataset
@@ -25,8 +25,12 @@ SZ = 512
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("inputs", nargs="+", help="One or more dataset JSON files.")
-    p.add_argument("--blip_prefix", default="", help="Prefix to feed to BLIP. (optional)")
-    p.add_argument("--clip_prefix", default="", help="Prefix to add before CLIP. (optional)")
+    p.add_argument(
+        "--blip_prefix", default="", help="Prefix to feed to BLIP. (optional)"
+    )
+    p.add_argument(
+        "--clip_prefix", default="", help="Prefix to add before CLIP. (optional)"
+    )
     p.add_argument("--num_gen", default=100, help="How many captions to generate.")
     p.add_argument("--num_keep", default=10, help="How many captions to keep.")
     p.add_argument(
@@ -39,18 +43,16 @@ def main():
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     logging.info(f"device is {device}")
 
-    logging.info('***********************************************************')
-    logging.info('* To allow model downloads, use: env TRANSFORMERS_OFFLINE=0')
-    logging.info('***********************************************************')
+    logging.info("***********************************************************")
+    logging.info("* To allow model downloads, use: env TRANSFORMERS_OFFLINE=0")
+    logging.info("***********************************************************")
 
     # Downloads 945MB to ~/.cache/huggingface/hub/models--Salesforce--blip-image...
-    blip_version = 'Salesforce/blip-image-captioning-base'
+    blip_version = "Salesforce/blip-image-captioning-base"
     # Downloads 1.8G.
-    blip_version = 'Salesforce/blip-image-captioning-large'
+    blip_version = "Salesforce/blip-image-captioning-large"
     logging.info("loading BLIP processor")
-    blip_processor = transformers.AutoProcessor.from_pretrained(
-        blip_version
-    )
+    blip_processor = transformers.AutoProcessor.from_pretrained(blip_version)
     logging.info("loading BLIP model")
     blip_model = transformers.BlipForConditionalGeneration.from_pretrained(
         blip_version
@@ -101,10 +103,10 @@ def main():
                 )  # List of strings.
                 captions = [args.clip_prefix + i for i in captions]
 
-                if 'caption' in md:
-                    captions.append(md['caption'])
+                if "caption" in md:
+                    captions.append(md["caption"])
                 if "autocaption" in md:
-                    ac = md['autocaption']
+                    ac = md["autocaption"]
                     if type(ac) is str:
                         ac = [ac]
                     captions.extend(ac)

@@ -188,7 +188,7 @@ function caption() {
         txt.val(md['caption']);
     } else if ('autocaption' in md) {
         let ac = md['autocaption'];
-        if (typeof(ac) !== 'string') {
+        if (typeof (ac) !== 'string') {
             ac = ac[0][1];  // First string in autocaptions.
         }
         txt.val(ac);
