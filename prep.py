@@ -92,7 +92,7 @@ def main():
                 mask = ds.cropped_alpha(o["n"], args.size)
             if mask is None:
                 mask = no_mask
-            ofn = f"{count:06d}_{o['md5']}"
+            ofn = f"{count:06d}_{o['n']}_{o['md5']}"
             with open(f"{args.outdir}/{ofn}.jpg", "wb") as f:
                 f.write(img)
             with open(f"{args.outdir}/{ofn}.mask.png", "wb") as f:
