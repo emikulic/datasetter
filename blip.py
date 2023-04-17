@@ -101,7 +101,8 @@ def main():
                 captions = blip_processor.batch_decode(
                     outputs, skip_special_tokens=True
                 )  # List of strings.
-                captions = [args.clip_prefix + i for i in captions]
+                crop = len(args.blip_prefix)
+                captions = [args.clip_prefix + i[crop:] for i in captions]
 
                 if "caption" in md:
                     captions.append(md["caption"])
