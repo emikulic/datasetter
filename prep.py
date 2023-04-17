@@ -38,6 +38,9 @@ def main():
         help="If set, skip any input that doesn't have a caption set.",
         action="store_true",
     )
+    p.add_argument(
+        "--prefix", type=str, default="", help="Prefix to add to all captions."
+    )
     args = p.parse_args()
 
     os.makedirs(f"{args.outdir}", exist_ok=True)
@@ -98,7 +101,8 @@ def main():
             with open(f"{args.outdir}/{ofn}.mask.png", "wb") as f:
                 f.write(mask)
             with open(f"{args.outdir}/{ofn}.txt", "w") as f:
-                f.write(caption.strip() + "\n")
+                assert type(caption) is str, (caption, o)
+                f.write(args.prefix + caption.strip() + "\n")
 
             print(f'ds {dsi+1}/{dsn} n {oi+1}/{on} fn {o["fn"]!r} {caption!r}')
 
