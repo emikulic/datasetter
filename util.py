@@ -180,7 +180,7 @@ class Dataset:
 
     def cropped_alpha(self, n, sz):
         """
-        Returns PNG image data for the alpha channel for object n, cropped and scaled
+        Returns the alpha channel for object n as a PNG, cropped and scaled
         and rotated. Returns None if no alpha channel. Populates the cache.
         """
         o = self._data[n].copy()
@@ -196,12 +196,16 @@ class Dataset:
         }
         key = json.dumps(key, sort_keys=True)
         try:
-            return self._cache[key]
+            val = self._cache[key]
+            if val == b"":
+                return None
+            return val
         except KeyError:
             # TODO: change this to verbose logging.
             print(f"cropped_alpha cache miss for {o['fn']}, {key}")
             img = load_and_crop(o, sz, dsdir=self._dir, alpha=True)
             if img is None:
+                self._cache[key] = b""
                 return img
             s = io.BytesIO()
             img.save(s, format="png")
