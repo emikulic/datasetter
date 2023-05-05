@@ -214,7 +214,7 @@ class Dataset:
         o["sz"] = sz
         # TODO: change this to verbose logging.
         print(f"crop_preview for {o}")
-        img = load_and_transform(o, sz, sz, dsdir=self._dir)
+        img = load_and_transform(o, sz, sz, dsdir=self._dir).convert("RGB")
         s = io.BytesIO()
         img.save(s, format="jpeg", quality=95)
         return s.getvalue()
@@ -229,7 +229,7 @@ class Dataset:
         o["sz"] = sz
         # TODO: change this to verbose logging.
         print(f"rotate_preview for {o}")
-        img = load_and_transform(o, sz, sz, dsdir=self._dir)
+        img = load_and_transform(o, sz, sz, dsdir=self._dir).convert("RGB")
         s = io.BytesIO()
         img.save(s, format="jpeg", quality=95)
         return s.getvalue()
