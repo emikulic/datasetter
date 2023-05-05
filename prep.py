@@ -10,17 +10,6 @@ import io
 from PIL import Image
 
 
-def make_empty_mask(sz):
-    """
-    Returns a PNG mask that doesn't mask anything out.
-    """
-    mask = np.zeros((sz, sz), dtype=np.uint8)
-    mask += 255
-    s = io.BytesIO()
-    Image.fromarray(mask).save(s, format="png")
-    return s.getvalue()
-
-
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("outdir", help="Dataset directory to generate.")
@@ -44,7 +33,6 @@ def main():
     args = p.parse_args()
 
     os.makedirs(f"{args.outdir}", exist_ok=True)
-    no_mask = make_empty_mask(args.size)
 
     # Load datasets.
     datasets = [Dataset(i) for i in args.inputs]
@@ -87,6 +75,8 @@ def main():
                 print(f'skip {o["fn"]} missing caption and autocaption')
                 continue
 
+            caption = args.prefix + caption.strip()
+
             # Stop at limit.
             count += 1
             if args.limit > 0 and count > args.limit:
@@ -94,12 +84,7 @@ def main():
 
             # Write out.
             img = ds.cropped_jpg(o["n"], args.size)
-            if o.get("mask_state") == "done":
-                mask = ds.cropped_mask(o["n"], args.size)
-            else:
-                mask = ds.cropped_alpha(o["n"], args.size)
-            if mask is None:
-                mask = no_mask
+            mask = ds.cropped_mask(o["n"], args.size)
             ofn = f"{count:06d}_{o['n']}_{o['md5']}"
             with open(f"{args.outdir}/{ofn}.jpg", "wb") as f:
                 f.write(img)
@@ -107,7 +92,7 @@ def main():
                 f.write(mask)
             with open(f"{args.outdir}/{ofn}.txt", "w") as f:
                 assert type(caption) is str, (caption, o)
-                f.write(args.prefix + caption.strip() + "\n")
+                f.write(caption + "\n")
 
             print(f'ds {dsi+1}/{dsn} n {oi+1}/{on} fn {o["fn"]!r} {caption!r}')
 

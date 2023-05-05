@@ -140,7 +140,8 @@ class Dataset:
         except KeyError:
             # TODO: change this to verbose logging.
             print(f"cropped_jpg cache miss for {key}")
-            img = load_and_crop(o, sz, dsdir=self._dir)
+            img = load_and_transform(o, sz, sz, dsdir=self._dir)
+            img = img.convert("RGB")  # Drop alpha.
             s = io.BytesIO()
             img.save(s, format="jpeg", quality=95)
             img = s.getvalue()
@@ -167,46 +168,13 @@ class Dataset:
         try:
             return self._cache[key]
         except KeyError:
-            assert o["mask_state"] == "done", o
-            o["fn"] = o["mask_fn"]
+            # TODO: handle: assert o["mask_state"] == "done", o
+            # o["fn"] = o["mask_fn"]
             # TODO: change this to verbose logging.
             print(f"cropped_mask cache miss for {o['fn']}, {key}")
-            img = load_and_crop(o, sz, dsdir=self._dir)
-            s = io.BytesIO()
-            img.save(s, format="png")
-            img = s.getvalue()
-            self._cache[key] = img
-            return img
-
-    def cropped_alpha(self, n, sz):
-        """
-        Returns the alpha channel for object n as a PNG, cropped and scaled
-        and rotated. Returns None if no alpha channel. Populates the cache.
-        """
-        o = self._data[n].copy()
-        key = {
-            "md5": o["md5"],
-            "x": o["x"],
-            "y": o["y"],
-            "w": o["w"],
-            "h": o["h"],
-            "sz": sz,
-            "rot": o.get("rot", 0),
-            "alpha": 1,
-        }
-        key = json.dumps(key, sort_keys=True)
-        try:
-            val = self._cache[key]
-            if val == b"":
-                return None
-            return val
-        except KeyError:
-            # TODO: change this to verbose logging.
-            print(f"cropped_alpha cache miss for {o['fn']}, {key}")
-            img = load_and_crop(o, sz, dsdir=self._dir, alpha=True)
-            if img is None:
-                self._cache[key] = b""
-                return img
+            img = load_and_transform(o, sz, sz, dsdir=self._dir)
+            r, g, b, a = img.split()
+            img = a
             s = io.BytesIO()
             img.save(s, format="png")
             img = s.getvalue()
@@ -245,7 +213,7 @@ class Dataset:
         o["sz"] = sz
         # TODO: change this to verbose logging.
         print(f"crop_preview for {o}")
-        img = load_and_crop(o, sz, dsdir=self._dir)
+        img = load_and_transform(o, sz, sz, dsdir=self._dir)
         s = io.BytesIO()
         img.save(s, format="jpeg", quality=95)
         return s.getvalue()
@@ -260,68 +228,48 @@ class Dataset:
         o["sz"] = sz
         # TODO: change this to verbose logging.
         print(f"rotate_preview for {o}")
-        img = load_and_crop(o, sz, dsdir=self._dir)
+        img = load_and_transform(o, sz, sz, dsdir=self._dir)
         s = io.BytesIO()
         img.save(s, format="jpeg", quality=95)
         return s.getvalue()
 
 
-_load_cache = [("", None)]  # (fn, Image)
+# A cache to speed up e.g. multiple crops of the same original.
+_load_cache = [("", None)]  # (fn, Image object)
 
 
-def load_image(fn, dsdir=".", alpha=False):
+def load_image(fn, dsdir="."):
     """
-    Load an image, apply EXIF rotation, convert to RGB.
-    Returns the alpha channel if alpha=True and one is present, otherwise
-    returns None.
+    Load image and apply EXIF rotation. Returns an RGBA Image object.
     """
     if _load_cache[0][0] == fn:
-        img = _load_cache[0][1]
-    else:
-        img = Image.open(f"{dsdir}/{fn}")
-        img = ImageOps.exif_transpose(img)
-        _load_cache[0] = (fn, img)
-    if alpha:
-        if img.mode != "RGBA":
-            return None
-        img = np.asarray(img).copy()
-        h, w, c = img.shape
-        assert c == 4
-        img[:, :, 0:3] = img[:, :, 3:]  # fill alpha into RGB
-        img = img[:, :, :3]  # drop alpha
-        img = Image.fromarray(img)
-        return img
-    if img.mode != "RGB":
-        img = img.convert("RGB")
+        return _load_cache[0][1]
+
+    img = Image.open(f"{dsdir}/{fn}")
+    img = ImageOps.exif_transpose(img)
+    img = img.convert("RGBA")
+    _load_cache[0] = (fn, img)
     return img
 
 
-def load_and_crop_wh(o, ow, oh, dsdir=".", alpha=False):
+def load_and_transform(o, out_w, out_h, dsdir="."):
     """
-    Load the image from the given metadata (o), cropped and scaled and rotated.
+    load_image for the given metadata object `o` and transform it: crop, scale to out_w x out_h,
+    and rotate. Returns an RGBA Image object.
     """
-    img = load_image(o["fn"], dsdir, alpha)
-    if alpha:
-        if img is None:
-            return img
+    img = load_image(o["fn"], dsdir)
     assert img.width == o["orig_w"]  # TODO: warn instead
     assert img.height == o["orig_h"]
     x, y, w, h = o["x"], o["y"], o["w"], o["h"]
-    assert x >= 0, x
-    assert y >= 0, y
     assert w > 0, w
     assert h > 0, h
-    assert ow > 0, ow
-    assert oh > 0, oh
-    assert ow <= 1024, ow
-    assert oh <= 1024, oh
+    assert out_w > 0, out_w
+    assert out_h > 0, out_h
+    assert out_w <= 1024, out_w
+    assert out_h <= 1024, out_h
     rot = o.get("rot", 0)
     assert rot in [0, 1, 2, 3], rot
     img = img.crop((x, y, x + w, y + h))
-    img = img.resize((ow, oh), Image.Resampling.BICUBIC)
+    img = img.resize((out_w, out_h), Image.Resampling.BICUBIC)
     img = img.rotate(rot * 90)
     return img
-
-
-def load_and_crop(o, sz, dsdir=".", alpha=False):
-    return load_and_crop_wh(o, sz, sz, dsdir, alpha)

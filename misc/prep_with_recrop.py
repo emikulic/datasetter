@@ -117,14 +117,14 @@ def main():
             o["h"] = h
 
             # Write out.
-            img = util.load_and_crop_wh(o, args.w, args.h, ds._dir)
+            img = util.load_and_transform(o, args.w, args.h, ds._dir)
             s = io.BytesIO()
             img.save(s, format="jpeg", quality=95)
             img = s.getvalue()
             mask = None
             if o.get("mask_state") == "done":
                 o["fn"] = o["mask_fn"]
-                mask = util.load_and_crop_wh(o, args.w, args.h, ds._dir)
+                mask = util.load_and_transform(o, args.w, args.h, ds._dir)
                 s = io.BytesIO()
                 mask.save(s, format="jpeg", quality=95)
                 mask = s.getvalue()
