@@ -2,7 +2,7 @@
 """
 Utilities.
 """
-from PIL import Image, ImageFile, ImageOps
+from PIL import Image, ImageFile, ImageOps, ImageChops
 import json
 import os
 import numpy as np
@@ -106,7 +106,7 @@ class Dataset:
         assert "mask_fn" not in obj
         os.makedirs(f"{self._dir}/{self._maskdir}", exist_ok=True)
         maskfn = f'{self._maskdir}/{obj["n"]}_{obj["md5"]}.prep.mask.png'
-        img = load_image(obj["fn"], dsdir=self._dir)
+        img = load_image(obj["fn"], dsdir=self._dir).convert("RGB")
         img = np.asarray(img).copy()  # copy to make it not readonly
         rgb = np.asarray([255, 0, 255])
         precision = 255 - (1 + 2 + 4 + 8)  # bitmask
@@ -168,15 +168,22 @@ class Dataset:
         try:
             return self._cache[key]
         except KeyError:
-            # TODO: handle: assert o["mask_state"] == "done", o
-            # o["fn"] = o["mask_fn"]
             # TODO: change this to verbose logging.
             print(f"cropped_mask cache miss for {o['fn']}, {key}")
             img = load_and_transform(o, sz, sz, dsdir=self._dir)
             r, g, b, a = img.split()
-            img = a
+            del img
+
+            # Apply a custom mask if present.
+            if o.get("mask_state", "") == "done":
+                om = o.copy()
+                om["fn"] = o["mask_fn"]
+                mask = load_and_transform(om, sz, sz, dsdir=self._dir)
+                mask = mask.convert("L")
+                a = ImageChops.multiply(a, mask)
+
             s = io.BytesIO()
-            img.save(s, format="png")
+            a.save(s, format="png")
             img = s.getvalue()
             self._cache[key] = img
             return img
@@ -186,18 +193,12 @@ class Dataset:
         Like cropped_jpg but draws the mask on if present.
         """
         o = self._data[n]
-        img = self.cropped_jpg(n, sz)
-        if o.get("mask_state", "") != "done":
-            return img
-        mask = self.cropped_mask(n, sz)
-        img = Image.open(io.BytesIO(img))
-        mask = Image.open(io.BytesIO(mask))
-        img = np.asarray(img).copy()
-        mask = np.asarray(mask)
-        cond = np.all(mask != [255, 255, 255], axis=2)
-        img[cond] = [255, 0, 255]
+        img = Image.open(io.BytesIO(self.cropped_jpg(n, sz)))
+        mask = Image.open(io.BytesIO(self.cropped_mask(n, sz)))
+        color = Image.new("RGB", img.size, color=(255, 0, 255))
+        img = Image.composite(img, color, mask).convert("RGB")
         s = io.BytesIO()
-        Image.fromarray(img).save(s, format="jpeg", quality=95)
+        img.save(s, format="jpeg", quality=95)
         return s.getvalue()
 
     def crop_preview(self, n, x, y, wh, sz):
