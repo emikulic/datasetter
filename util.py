@@ -138,8 +138,6 @@ class Dataset:
         try:
             return self._cache[key]
         except KeyError:
-            # TODO: change this to verbose logging.
-            print(f"cropped_jpg cache miss for {key}")
             img = load_and_transform(o, sz, sz, dsdir=self._dir)
             img = img.convert("RGB")  # Drop alpha.
             s = io.BytesIO()
@@ -168,8 +166,6 @@ class Dataset:
         try:
             return self._cache[key]
         except KeyError:
-            # TODO: change this to verbose logging.
-            print(f"cropped_mask cache miss for {o['fn']}, {key}")
             img = load_and_transform(o, sz, sz, dsdir=self._dir)
             r, g, b, a = img.split()
             del img
