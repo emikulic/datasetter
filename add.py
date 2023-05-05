@@ -42,11 +42,32 @@ def center_crop(obj):
     obj["y"] = (h - sz) // 2
 
 
+def pad_to_square(obj):
+    """
+    Populate x,y,w,h for padding to square aspect.
+    """
+    w = obj["orig_w"]
+    h = obj["orig_h"]
+    sz = max(w, h)
+    obj["w"] = obj["h"] = sz
+    if w > h:
+        obj["x"] = 0
+        obj["y"] = (h - sz) // 2
+    else:
+        obj["x"] = (w - sz) // 2
+        obj["y"] = 0
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument(
         "--onefile",
         help="Only add one file per input subdirectory.",
+        action="store_true",
+    )
+    p.add_argument(
+        "--pad",
+        help="Pad to square aspect. Default is to center crop instead.",
         action="store_true",
     )
     p.add_argument("dsfile", help="JSON dataset file to add to.")
@@ -116,7 +137,10 @@ def main():
             "rot": 0,
             "needs_rebuild": 1,
         }
-        center_crop(obj)
+        if args.pad:
+            pad_to_square(obj)
+        else:
+            center_crop(obj)
         ds.add(obj)
 
 
