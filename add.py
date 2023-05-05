@@ -7,7 +7,6 @@ If a filename is already in the dataset, it will be skipped.
 import argparse
 import os
 import hashlib
-from util import Dataset
 import util
 import PIL
 
@@ -45,7 +44,6 @@ def center_crop(obj):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--caption", default=None, help="Optional default caption.")
     p.add_argument(
         "--onefile",
         help="Only add one file per input subdirectory.",
@@ -74,7 +72,7 @@ def main():
         print("exiting due to bad inputs")
 
     # Load dataset.
-    ds = Dataset(args.dsfile)
+    ds = util.Dataset(args.dsfile)
 
     # Build list of inputs.
     fns = []
@@ -118,8 +116,6 @@ def main():
             "rot": 0,
             "needs_rebuild": 1,
         }
-        if args.caption:
-            obj["caption"] = args.caption
         center_crop(obj)
         ds.add(obj)
 
