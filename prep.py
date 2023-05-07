@@ -75,7 +75,7 @@ def main():
                 print(f'skip {o["fn"]} missing caption and autocaption')
                 continue
 
-            caption = args.prefix + caption.strip()
+            caption = args.prefix + caption.strip().lower()
 
             # Stop at limit.
             count += 1
