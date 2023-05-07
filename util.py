@@ -184,14 +184,14 @@ class Dataset:
             self._cache[key] = img
             return img
 
-    def masked_thumbnail(self, n, sz):
+    def masked_thumbnail(self, n, sz, color=(255, 0, 255)):
         """
         Like cropped_jpg but draws the mask on if present.
         """
         o = self._data[n]
         img = Image.open(io.BytesIO(self.cropped_jpg(n, sz)))
         mask = Image.open(io.BytesIO(self.cropped_mask(n, sz)))
-        color = Image.new("RGB", img.size, color=(255, 0, 255))
+        color = Image.new("RGB", img.size, color=color)
         img = Image.composite(img, color, mask).convert("RGB")
         s = io.BytesIO()
         img.save(s, format="jpeg", quality=95)

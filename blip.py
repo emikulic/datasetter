@@ -89,7 +89,7 @@ def main():
                         f"already has autocaption, skipping {md}, try --override"
                     )
                     continue
-            jpg = ds.cropped_jpg(n, SZ)
+            jpg = ds.masked_thumbnail(n, SZ, color=(0, 0, 0))
             img = Image.open(io.BytesIO(jpg))
 
             with torch.no_grad():  # matters
