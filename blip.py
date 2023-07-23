@@ -100,6 +100,7 @@ def main():
                 outputs = blip_model.generate(
                     **inputs,
                     max_new_tokens=80,
+                    num_beams=16,
                     num_return_sequences=args.num_gen,
                     do_sample=True,
                 )
