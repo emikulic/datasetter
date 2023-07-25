@@ -5,7 +5,7 @@ Use BLIP to automatically generate captions, and CLIP to keep the best ones.
 import logging
 
 fmt = "%(asctime)s %(filename)s:%(lineno)d %(levelname)s %(message)s"
-logging.basicConfig(format=fmt, level=logging.DEBUG)
+logging.basicConfig(format=fmt, level=logging.INFO)
 logging.info("importing")
 import os
 
