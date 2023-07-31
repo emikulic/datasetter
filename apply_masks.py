@@ -28,7 +28,7 @@ def main():
             assert ".prep.mask.png" in mask_fn, mask_fn
             out_fn = mask_fn.replace(".prep.mask.png", ".mask.png")
             print(f"{mask_fn} -> {out_fn}")
-            img = Image.open(f"{ds._dir}/{mask_fn}")
+            img = Image.open(f"{ds._dir}/{mask_fn}").convert('RGB')
             img = np.asarray(img)
             cond = img == [255, 0, 255]
             cond = cond.all(axis=2)
