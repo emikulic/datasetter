@@ -255,7 +255,7 @@ def load_and_transform(o, out_w, out_h, dsdir="."):
     and rotate. Returns an RGBA Image object.
     """
     img = load_image(o["fn"], dsdir)
-    assert img.width == o["orig_w"]  # TODO: warn instead
+    assert img.width == o["orig_w"], (img.width, o["orig_w"])  # TODO: warn instead
     assert img.height == o["orig_h"]
     x, y, w, h = o["x"], o["y"], o["w"], o["h"]
     assert w > 0, w
