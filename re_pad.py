@@ -28,11 +28,12 @@ def main():
         fn = md['fn']
         print(fn)
         try:
-            img = util.load_image(fn)
+            img = util.load_image(fn, dsdir)
         except PIL.UnidentifiedImageError as e:
             print(f"WARN: skipping {fn} because {e}")
             continue
 
+        fn = f'{dsdir}/{fn}'
         cksum = md5(fn)
         if cksum != md['md5']:
             print(' md5 changed!')
