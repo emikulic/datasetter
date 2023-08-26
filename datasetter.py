@@ -104,8 +104,9 @@ async def prep_mask_receiver(request):
         id = int(received["id"])
     except (KeyError, ValueError):
         return json_error('"id" must be int')
+    force = received.get("force", 0) == 1
     append = request.config_dict["args"].append
-    request.config_dict["ds"].prep_mask(id, append)
+    request.config_dict["ds"].prep_mask(id, append, force)
     return web.Response(status=204)
 
 

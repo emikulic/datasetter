@@ -167,6 +167,7 @@ function caption() {
         }
     });
     $('<br>').appendTo(content);
+
     let prep_mask =
         $('<button type="button">Prepare mask</button>').appendTo(content);
     if ('mask_fn' in md) {
@@ -183,6 +184,18 @@ function caption() {
              'id': curr_id
          })).then(() => prep_mask.prop('disabled', true));
     });
+
+    if (has_mask) {
+        let redo_mask =
+            $('<button type="button">Redo mask</button>').appendTo(content);
+        redo_mask.click(function(ev) {
+            $.post('prep_mask', JSON.stringify({
+                'id': curr_id,
+                'force': 1
+            })).then(() => redo_mask.prop('disabled', true));
+        });
+    }
+
     append_warns(md, content);
     if ('caption' in md) {
         txt.val(md['caption']);

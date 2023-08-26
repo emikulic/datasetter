@@ -98,12 +98,13 @@ class Dataset:
                 json.dump(obj, f)
                 f.write("\n")
 
-    def prep_mask(self, n, append):
+    def prep_mask(self, n, append, force=False):
         """
         Creates {fn}.masks/{n}_{md5}.prep.mask.png
         """
         obj = self._data[n]
-        assert "mask_fn" not in obj
+        if not force:
+            assert "mask_fn" not in obj
         os.makedirs(f"{self._dir}/{self._maskdir}", exist_ok=True)
         maskfn = f'{self._maskdir}/{obj["n"]}_{obj["md5"]}.prep.mask.png'
         img = load_image(obj["fn"], dsdir=self._dir).convert("RGB")
@@ -114,7 +115,9 @@ class Dataset:
         cond = (img & precision) == (rgb & precision)
         cond = cond.all(axis=2)
         img[cond] = [200, 0, 200]
-        Image.fromarray(img).save(f"{self._dir}/{maskfn}")
+        fn = f"{self._dir}/{maskfn}"
+        Image.fromarray(img).save(fn)
+        print(f'saved {fn}')
         obj["mask_fn"] = maskfn
         obj["mask_state"] = "prep"
         self.update(obj, append)
