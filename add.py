@@ -66,8 +66,8 @@ def main():
         action="store_true",
     )
     p.add_argument(
-        "--pad",
-        help="Pad to square aspect. Default is to center crop instead.",
+        "--no_pad",
+        help="Don't pad to square aspect; center crop instead.",
         action="store_true",
     )
     p.add_argument("dsfile", help="JSON dataset file to add to.")
@@ -137,10 +137,10 @@ def main():
             "rot": 0,
             "needs_rebuild": 1,
         }
-        if args.pad:
-            pad_to_square(obj)
-        else:
+        if args.no_pad:
             center_crop(obj)
+        else:
+            pad_to_square(obj)
         ds.add(obj)
 
 
