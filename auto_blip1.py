@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Use BLIP to automatically generate captions, and CLIP to keep the best ones.
+Use BLIP to automatically generate captions.
 """
 import logging
 
@@ -32,11 +32,9 @@ def main():
         "--clip_prefix", default="", help="Prefix to add before CLIP. (optional)"
     )
     p.add_argument(
-        "--num_gen", type=int, default=100, help="How many captions to generate."
+        "--num_gen", type=int, default=1, help="How many captions to generate."
     )
-    p.add_argument(
-        "--num_keep", type=int, default=10, help="How many captions to keep."
-    )
+    p.add_argument("--num_beams", type=int, default=16, help="Beam search param.")
     p.add_argument(
         "--override",
         help="Regenerate existing autocaptions.",
@@ -52,7 +50,8 @@ def main():
     logging.info("***********************************************************")
 
     # Downloads 945MB to ~/.cache/huggingface/hub/models--Salesforce--blip-image...
-    blip_version = "Salesforce/blip-image-captioning-base"
+    # blip_version = "Salesforce/blip-image-captioning-base"
+
     # Downloads 1.8G.
     blip_version = "Salesforce/blip-image-captioning-large"
     logging.info("loading BLIP processor")
@@ -62,21 +61,7 @@ def main():
         blip_version
     ).to(device)
 
-    # Downloads 1.6GB to ~/.cache/huggingface/hub/models--openai--clip-vit-large-patch14
-    clip_version = "openai/clip-vit-large-patch14"  # This is what sd1.5 uses.
-    logging.info("loading CLIP processor")
-    clip_processor = transformers.CLIPImageProcessor()
-    logging.info("loading CLIP image model")
-    clip_image_model = transformers.CLIPVisionModelWithProjection.from_pretrained(
-        clip_version
-    ).to(device)
-    tokenizer = transformers.AutoTokenizer.from_pretrained(clip_version)
-    logging.info("loading CLIP text model")
-    clip_text_model = transformers.CLIPTextModelWithProjection.from_pretrained(
-        clip_version
-    ).to(device)
-    logging.info("done loading")
-
+    key = "auto_blip1"
     for fn in args.inputs:
         logging.info(f"loading dataset {fn}")
         ds = Dataset(fn)
@@ -84,7 +69,7 @@ def main():
         ln = len(ds._data.items())
         for n, md in ds._data.items():
             if not args.override:
-                if "autocaption" in md:
+                if key in md:
                     logging.info(
                         f"already has autocaption, skipping {md}, try --override"
                     )
@@ -100,7 +85,7 @@ def main():
                 outputs = blip_model.generate(
                     **inputs,
                     max_new_tokens=80,
-                    num_beams=16,
+                    num_beams=args.num_beams,
                     num_return_sequences=args.num_gen,
                     do_sample=True,
                 )
@@ -110,35 +95,10 @@ def main():
                 crop = len(args.blip_prefix)
                 captions = [args.clip_prefix + i[crop:] for i in captions]
 
-                if "caption" in md:
-                    captions.append(md["caption"])
-                if "autocaption" in md:
-                    ac = md["autocaption"]
-                    if type(ac) is str:
-                        ac = [ac]
-                    captions.extend(ac)
+                md[key] = captions
 
-                # CLIP image.
-                pixel_values = clip_processor(img).pixel_values[0]
-                pixel_values = torch.tensor(pixel_values).to(device)
-                img_embed = clip_image_model(pixel_values.unsqueeze(0)).image_embeds[0]
-                # img_embed.shape is torch.Size([768])
-
-                # CLIP text.
-                inputs = tokenizer(
-                    captions, padding="max_length", truncation=True, return_tensors="pt"
-                ).to(device)
-                txt_embed = clip_text_model(**inputs).text_embeds
-
-                # Sort into order.
-                dist = torch.nn.functional.cosine_similarity(txt_embed, img_embed)
-                captions = sorted(zip(dist.tolist(), captions), reverse=True)
-
-            captions = captions[: args.num_keep]
-            captions = [[f"{k:.03}", v] for k, v in captions]
-            md["autocaption"] = captions
             ds.add(md)
-            logging.info(f'{n+1}/{ln} {md["fn"]} {captions[0]}')
+            logging.info(f'{n+1}/{ln} {md["fn"]} {captions}')
 
         print("compacting")
         ds.compact()
