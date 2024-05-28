@@ -17,12 +17,16 @@ def main():
         print(f"processing {i}")
         d = Dataset(i)
         keys = list(d._data.keys())
+        n = 0
         for k in keys:
             md = d._data[k]
             fn = f'{d._dir}/{md["fn"]}'
             if not os.path.exists(fn):
                 print(f" missing {fn}")
                 del d._data[k]
+            else:
+                d._data[k]['n'] = n
+                n += 1
         d.compact()
 
 
